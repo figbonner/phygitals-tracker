@@ -21,7 +21,7 @@
   .hero .card .sub{font-size:.75rem;color:#94a3b8;margin-top:2px}
   .hero .card:nth-child(5) .value{color:#ef4444}
   .hero .card:nth-child(6) .value{color:#22c55e}
-  .section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}\n  .gap-viz{display:flex;align-items:center;justify-content:center;gap:20px;background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;flex-wrap:wrap}
+  .section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}  .gap-viz{display:flex;align-items:center;justify-content:center;gap:20px;background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;flex-wrap:wrap}
   .gap-viz .player{text-align:center}
   .gap-viz .player.me{border:2px solid #f59e0b;border-radius:10px;padding:10px 20px}
   .gap-viz .player .name{font-weight:700;font-size:.95rem}
@@ -48,7 +48,7 @@
   .prize-card .rank-title{font-size:1.3rem;font-weight:800}
   .prize-card .prize-desc{font-size:.7rem;color:#94a3b8;margin-top:4px}
   .p1{color:#fbbf24}.p2{color:#94a3b8}.p3{color:#d97706}.p4{color:#a855f7}.p5{color:#22c55e}
-  .p6{color:#3b82f6}.p7{color:#ef4444}.p8{color:#64748b}.p9{color:#64748b}.p10{color:#64748b}\n  .pack-table-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
+  .p6{color:#3b82f6}.p7{color:#ef4444}.p8{color:#64748b}.p9{color:#64748b}.p10{color:#64748b}  .pack-table-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
   .pack-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .filter-btn{padding:4px 12px;border-radius:16px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:.75rem}
   .filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
@@ -97,7 +97,7 @@
   <div class="card"><div class="label">Claw Pulls</div><div class="value" id="hPulls">—</div><div class="sub">this week</div></div>
   <div class="card"><div class="label">Gap to Next</div><div class="value" id="hGapUp">—</div><div class="sub" id="hGapUpSub"></div></div>
   <div class="card"><div class="label">Lead Over Below</div><div class="value" id="hGapDown">—</div><div class="sub" id="hGapDownSub"></div></div>
-</div>\n<div class="section-header">🏆 Prize Position — <span id="weekLabel">Week</span></div>
+</div><div class="section-header">🏆 Prize Position — <span id="weekLabel">Week</span></div>
 <div class="gap-viz" id="gapViz"></div>
 <div class="section-header">🏅 Weekly Leaderboard & Prizes</div>
 <div class="lb-prizes">
@@ -131,7 +131,7 @@
     <tbody id="rarityBody"></tbody>
   </table>
 </div>
-<button class="refresh-btn" onclick="loadAll()" title="Refresh data">↻</button>\n<script>
+<button class="refresh-btn" onclick="loadAll()" title="Refresh data">↻</button><script>
 const MY_WALLET='9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVXvFWEi66R7872kr1';
 const API_BASE='https://api.phygitals.com';
 const PROXY='https://corsproxy.io/?';
@@ -162,15 +162,15 @@ async function loadAll(){
     allPacks=pd;weeklyLB=wL.leaderboard||[];allTimeLB=aL.leaderboard||[];prizes=pr.prizes||[];
     renderAll();
     const ts=new Date().toISOString().replace('T',' ').substring(0,19)+' UTC';
-    document.getElementById('tsBadge').textContent='Live \u00B7 '+ts;
+    document.getElementById('tsBadge').textContent='Live · '+ts;
     document.getElementById('tsBadge').className='ts-badge live';
-    document.getElementById('dataMode').textContent='Live data \u00B7 auto-refreshes every 5 min';
+    document.getElementById('dataMode').textContent='Live data · auto-refreshes every 5 min';
     document.getElementById('weekLabel').textContent='Week '+getISOWeek().split('-')[1];
     setLoading(100);setTimeout(()=>setLoading(0),500);
-  }catch(e){console.error('Load failed:',e);document.getElementById('tsBadge').textContent='Error loading';document.getElementById('dataMode').textContent='Failed \u2014 click \u21BB to retry';setLoading(0);}
+  }catch(e){console.error('Load failed:',e);document.getElementById('tsBadge').textContent='Error loading';document.getElementById('dataMode').textContent='Failed — click ↻ to retry';setLoading(0);}
   btn.classList.remove('spinning');
 }
-function renderAll(){renderHero();renderGapViz();renderLeaderboard();renderPrizes();renderPacks();renderRarities();}\nfunction renderHero(){
+function renderAll(){renderHero();renderGapViz();renderLeaderboard();renderPrizes();renderPacks();renderRarities();}function renderHero(){
   const i=weeklyLB.findIndex(e=>e.address===MY_WALLET);if(i===-1)return;
   const me=weeklyLB[i],vol=me.volume/1e6,rank=i+1;
   const above=i>0?weeklyLB[i-1]:null,below=i<weeklyLB.length-1?weeklyLB[i+1]:null;
@@ -190,9 +190,9 @@ function renderGapViz(){
   const i=weeklyLB.findIndex(e=>e.address===MY_WALLET);if(i===-1)return;
   const me=weeklyLB[i],above=i>0?weeklyLB[i-1]:null,below=i<weeklyLB.length-1?weeklyLB[i+1]:null,rank=i+1;
   let h='';
-  if(above){const g=(above.volume-me.volume)/1e6;h+='<div class="player"><div class="name">'+shortAddr(above.address)+'</div><div class="vol">'+fmt$(above.volume/1e6)+' \u00B7 #'+(rank-1)+'</div></div>';h+='<div class="gap-info gap-up"><div class="amount">\u2191 '+fmt$(g)+' gap</div><div class="label">volume needed to reach #'+(rank-1)+'</div></div>';}
-  h+='<div class="player me"><div class="name">Figbonner \uD83C\uDFAE</div><div class="vol">'+fmt$(me.volume/1e6)+' \u00B7 #'+rank+'</div></div>';
-  if(below){const g=(me.volume-below.volume)/1e6;h+='<div class="gap-info gap-down"><div class="amount">\u2193 '+fmt$(g)+' lead</div><div class="label">buffer above #'+(rank+1)+'</div></div>';h+='<div class="player"><div class="name">'+shortAddr(below.address)+'</div><div class="vol">'+fmt$(below.volume/1e6)+' \u00B7 #'+(rank+1)+'</div></div>';}
+  if(above){const g=(above.volume-me.volume)/1e6;h+='<div class="player"><div class="name">'+shortAddr(above.address)+'</div><div class="vol">'+fmt$(above.volume/1e6)+' · #'+(rank-1)+'</div></div>';h+='<div class="gap-info gap-up"><div class="amount">↑ '+fmt$(g)+' gap</div><div class="label">volume needed to reach #'+(rank-1)+'</div></div>';}
+  h+='<div class="player me"><div class="name">Figbonner 🎮</div><div class="vol">'+fmt$(me.volume/1e6)+' · #'+rank+'</div></div>';
+  if(below){const g=(me.volume-below.volume)/1e6;h+='<div class="gap-info gap-down"><div class="amount">↓ '+fmt$(g)+' lead</div><div class="label">buffer above #'+(rank+1)+'</div></div>';h+='<div class="player"><div class="name">'+shortAddr(below.address)+'</div><div class="vol">'+fmt$(below.volume/1e6)+' · #'+(rank+1)+'</div></div>';}
   document.getElementById('gapViz').innerHTML=h;
 }
 function showLB(v){currentLBView=v;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');renderLeaderboard();}
@@ -201,22 +201,22 @@ function renderLeaderboard(){
   data.forEach((e,i)=>{const rank=i+1,isMe=e.address===MY_WALLET,vol=e.volume/1e6,name=isMe?'Figbonner':shortAddr(e.address),rc=rank<=3?' rank-'+rank:'';
     h+='<tr class="'+(isMe?'me-row':'')+'"><td><span class="rank-badge'+rc+'">'+rank+'</span></td><td><strong>'+name+'</strong></td><td>'+fmt$(vol)+'</td><td>'+e.packs+'</td><td class="points-col">'+e.points.toLocaleString()+'</td></tr>';});
   document.getElementById('lbBody').innerHTML=h;
-}\nfunction renderPrizes(){
+}function renderPrizes(){
   const colors=['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];let h='';
   prizes.forEach((p,i)=>{h+='<div class="prize-card"><div class="rank-title '+(colors[i]||'p10')+'">'+p.rank+'</div><div class="prize-desc">'+p.description+'</div></div>';});
   document.getElementById('prizeGrid').innerHTML=h;
   const myIdx=weeklyLB.findIndex(e=>e.address===MY_WALLET);
   if(myIdx!==-1){const rank=myIdx+1;const above=myIdx>0?weeklyLB[myIdx-1]:null;const gU=above?(above.volume-weeklyLB[myIdx].volume)/1e6:0;const abovePrize=rank>1?prizes[rank-2]:null;
-    let note='\uD83C\uDFAF Your position: <strong>#'+rank+'</strong>';
-    if(prizes[rank-1])note+=' \u2014 '+prizes[rank-1].description;
-    if(abovePrize&&gU>0)note+='<br>Climb '+fmt$(gU)+' to reach #'+(rank-1)+' \u2192 unlock '+abovePrize.description;
+    let note='🎯 Your position: <strong>#'+rank+'</strong>';
+    if(prizes[rank-1])note+=' — '+prizes[rank-1].description;
+    if(abovePrize&&gU>0)note+='<br>Climb '+fmt$(gU)+' to reach #'+(rank-1)+' → unlock '+abovePrize.description;
     document.getElementById('myPrizeNote').innerHTML=note;}
 }
 function renderPackFilters(){
   const cats=['all',...new Set(allPacks.map(p=>p.repack?'creator':p.category))];let h='';
-  cats.forEach(c=>{const label=c==='all'?'All Packs':c==='creator'?'\uD83C\uDFA8 Creator':c.charAt(0).toUpperCase()+c.slice(1);
+  cats.forEach(c=>{const label=c==='all'?'All Packs':c==='creator'?'🎨 Creator':c.charAt(0).toUpperCase()+c.slice(1);
     const count=c==='all'?allPacks.length:c==='creator'?allPacks.filter(p=>p.repack).length:allPacks.filter(p=>!p.repack&&p.category===c).length;
-    h+='<button class="filter-btn '+(c===currentFilter?'active':'')+'" onclick="filterPacks(\''+c+'\')">'+label+' ('+count+')</button>';});
+    h+='<button class="filter-btn '+(c===currentFilter?'active':'')+'" onclick="filterPacks(''+c+'')">'+label+' ('+count+')</button>';});
   document.getElementById('packFilters').innerHTML=h;
 }
 function filterPacks(c){currentFilter=c;renderPacks();}
@@ -231,20 +231,20 @@ function renderPacks(){
     const catClass=p.repack?'cat-creator':'cat-'+p.category.replace(/\s+/g,'-');
     const catLabel=p.repack?(p.creator_profile?.username||'Creator'):p.category;
     const packLabel=p.repack?p.name+' <span style="color:#94a3b8;font-size:.7rem">by '+(p.creator_profile?.username||'?')+'</span>':p.name;
-    const buyback=p.buyback_percent?(p.buyback_percent*100).toFixed(0)+'%':'\u2014';
-    const lastPull=p.last_pull?p.last_pull.substring(0,10):'\u2014';
-    h+='<tr><td><span class="stock-dot '+(p.in_stock?'stock-in':'stock-out')+'"></span></td><td>'+packLabel+'</td><td><span class="cat-badge '+catClass+'">'+catLabel+'</span></td><td>$'+price+'</td><td><strong>$'+(p.ev?.toFixed(2)||'\u2014')+'</strong></td><td>$'+(p.min_ev?.toFixed(1)||'?')+'\u2013$'+(p.max_ev?.toFixed(0)||'?')+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar '+evClass+'" style="width:'+Math.min(ratio,120)*0.6+'px"></div><strong>'+ratio+'%</strong></div></td><td>'+buyback+'</td><td>'+(p.num_pulls_7d?.toLocaleString()||0)+'</td><td>'+lastPull+'</td></tr>';});
+    const buyback=p.buyback_percent?(p.buyback_percent*100).toFixed(0)+'%':'—';
+    const lastPull=p.last_pull?p.last_pull.substring(0,10):'—';
+    h+='<tr><td><span class="stock-dot '+(p.in_stock?'stock-in':'stock-out')+'"></span></td><td>'+packLabel+'</td><td><span class="cat-badge '+catClass+'">'+catLabel+'</span></td><td>$'+price+'</td><td><strong>$'+(p.ev?.toFixed(2)||'—')+'</strong></td><td>$'+(p.min_ev?.toFixed(1)||'?')+'–$'+(p.max_ev?.toFixed(0)||'?')+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar '+evClass+'" style="width:'+Math.min(ratio,120)*0.6+'px"></div><strong>'+ratio+'%</strong></div></td><td>'+buyback+'</td><td>'+(p.num_pulls_7d?.toLocaleString()||0)+'</td><td>'+lastPull+'</td></tr>';});
   document.getElementById('packBody').innerHTML=h;
-}\nfunction renderRarities(){
+}function renderRarities(){
   let packs=[...allPacks];
   if(currentFilter==='creator')packs=packs.filter(p=>p.repack);
   else if(currentFilter!=='all')packs=packs.filter(p=>!p.repack&&p.category===currentFilter);
   packs.sort((a,b)=>(b.ev/Number(b.mint_price))-(a.ev/Number(a.mint_price)));
   let h='';
   packs.forEach(p=>{const rarities=p.rarity_distribution||[];
-    const gw=(n)=>{const r=rarities.find(rd=>rd.name?.toLowerCase()===n.toLowerCase());return r?r.weight+'%':'\u2014%';};
+    const gw=(n)=>{const r=rarities.find(rd=>rd.name?.toLowerCase()===n.toLowerCase());return r?r.weight+'%':'—%';};
     const label=p.repack?p.name+' <span style="color:#94a3b8">('+(p.creator_profile?.username||'creator')+')</span>':p.name+' <span style="color:#94a3b8">('+p.category+')</span>';
-    h+='<tr><td>'+label+'</td><td>$'+Number(p.mint_price)+'</td><td style="color:#94a3b8">'+gw('Common')+'</td><td style="color:#22c55e">'+gw('Uncommon')+'</td><td style="color:#3b82f6">'+gw('Rare')+'</td><td style="color:#a855f7">'+gw('Epic')+'</td><td style="color:#ef4444">'+(gw('Legendary')!=='\u2014%'?gw('Legendary'):gw('Mythic'))+'</td></tr>';});
+    h+='<tr><td>'+label+'</td><td>$'+Number(p.mint_price)+'</td><td style="color:#94a3b8">'+gw('Common')+'</td><td style="color:#22c55e">'+gw('Uncommon')+'</td><td style="color:#3b82f6">'+gw('Rare')+'</td><td style="color:#a855f7">'+gw('Epic')+'</td><td style="color:#ef4444">'+(gw('Legendary')!=='—%'?gw('Legendary'):gw('Mythic'))+'</td></tr>';});
   document.getElementById('rarityBody').innerHTML=h;
 }
 loadAll();
