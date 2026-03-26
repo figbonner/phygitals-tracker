@@ -356,11 +356,11 @@ function renderPrizes() {
 
 // ——— PACK EV TABLE ——————————————————————————————————————————————————————————
 function renderPackFilters() {
-  const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : p.category))];
+  const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : (p.category || 'other')))];
   let html = '';
   cats.forEach(c => {
     const label = c === 'all' ? 'All Packs' : c === 'creator' ? '🎨 Creator' : c.charAt(0).toUpperCase() + c.slice(1);
-    const count = c === 'all' ? allPacks.length : c === 'creator' ? allPacks.filter(p=>p.repack).length : allPacks.filter(p=>!p.repack && p.category===c).length;
+    const count = c === 'all' ? allPacks.length : c === 'creator' ? allPacks.filter(p=>p.repack).length : allPacks.filter(p=>!p.repack && (p.category||'other')===c).length;
     html += `\x3cbutton class="filter-btn ${c===currentFilter?'active':''}" onclick="filterPacks('${c}')">${label} (${count})\x3c/button>`;
   });
   document.getElementById('packFilters').innerHTML = html;
@@ -378,9 +378,7 @@ function renderPacks() {
   if (currentFilter === 'creator') {
     packs = packs.filter(p => p.repack);
   } else if (currentFilter !== 'all') {
-    packs = packs.filter(p => !p.repack && p.category === currentFilter);
-  }
-er);
+    packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter;
   }
 
   // Sort by EV/Price ratio descending
@@ -395,8 +393,8 @@ er);
     const price = Number(p.mint_price);
     const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : 0;
     const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
-    const catClass = p.repack ? 'cat-creator' : 'cat-' + p.category.replace(/\s+/g, '-');
-    const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : p.category;
+    const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-');
+    const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : (p.category || 'Other');
     const packLabel = p.repack ? `${p.name} \x3cspan style="color:#94a3b8;font-size:.7rem">by ${p.creator_profile?.username || '?'}\x3c/span>` : p.name;
     const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '—';
     const lastPull = p.last_pull ? p.last_pull.substring(0,10) : '—';
@@ -421,7 +419,7 @@ er);
 function renderRarities() {
   let packs = [...allPacks];
   if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
-  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && p.category === currentFilter);
+  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
 
   packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
 
@@ -432,7 +430,7 @@ function renderRarities() {
       const r = rarities.find(rd => rd.name?.toLowerCase() === name.toLowerCase());
       return r ? r.weight + '%' : '—%';
     };
-    const label = p.repack ? `${p.name} \x3cspan style="color:#94a3b8">(${p.creator_profile?.username || 'creator'})\x3c/span>` : `${p.name} \x3cspan style="color:#94a3b8">(${p.category})\x3c/span>`;
+    const label = p.repack ? `${p.name} \x3cspan style="color:#94a3b8">(${p.creator_profile?.username || 'creator'})\x3c/span>` : `${p.name} \x3cspan style="color:#94a3b8">(${p.category || 'Other'})\x3c/span>`;
 
     html += `\x3ctr>
       \x3ctd>${label}\x3c/td>
