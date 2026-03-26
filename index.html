@@ -14,6 +14,7 @@
   .ts-badge.live{border-color:#22c55e;color:#22c55e}
   .loading-bar{width:100%;height:3px;background:#1e293b;position:fixed;top:0;left:0;z-index:200}
   .loading-bar .fill{height:100%;background:linear-gradient(90deg,#f59e0b,#22c55e);width:0%;transition:width .3s}
+  /* Hero stats */
   .hero{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
   .hero .card{background:#1e293b;border-radius:10px;padding:16px;border-top:3px solid #3b82f6}
   .hero .card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#64748b}
@@ -21,7 +22,10 @@
   .hero .card .sub{font-size:.75rem;color:#94a3b8;margin-top:2px}
   .hero .card:nth-child(5) .value{color:#ef4444}
   .hero .card:nth-child(6) .value{color:#22c55e}
-  .section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}  .gap-viz{display:flex;align-items:center;justify-content:center;gap:20px;background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;flex-wrap:wrap}
+  /* Section headers */
+  .section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+  /* Gap visualizer */
+  .gap-viz{display:flex;align-items:center;justify-content:center;gap:20px;background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;flex-wrap:wrap}
   .gap-viz .player{text-align:center}
   .gap-viz .player.me{border:2px solid #f59e0b;border-radius:10px;padding:10px 20px}
   .gap-viz .player .name{font-weight:700;font-size:.95rem}
@@ -31,6 +35,7 @@
   .gap-info .label{font-size:.7rem;color:#94a3b8}
   .gap-up{color:#ef4444}
   .gap-down{color:#22c55e}
+  /* Leaderboard + Prizes */
   .lb-prizes{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
   .lb-section{background:#1e293b;border-radius:10px;padding:16px;max-height:500px;overflow-y:auto}
   .tab-row{display:flex;gap:8px;margin-bottom:12px}
@@ -43,12 +48,15 @@
   .rank-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:.75rem;font-weight:700}
   .rank-1{background:#fbbf24;color:#000}.rank-2{background:#94a3b8;color:#000}.rank-3{background:#d97706;color:#000}
   .points-col{color:#22c55e}
+  /* Prize grid */
   .prize-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
   .prize-card{background:#0f1523;border-radius:8px;padding:10px;text-align:center;border:1px solid #334155}
   .prize-card .rank-title{font-size:1.3rem;font-weight:800}
   .prize-card .prize-desc{font-size:.7rem;color:#94a3b8;margin-top:4px}
   .p1{color:#fbbf24}.p2{color:#94a3b8}.p3{color:#d97706}.p4{color:#a855f7}.p5{color:#22c55e}
-  .p6{color:#3b82f6}.p7{color:#ef4444}.p8{color:#64748b}.p9{color:#64748b}.p10{color:#64748b}  .pack-table-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
+  .p6{color:#3b82f6}.p7{color:#ef4444}.p8{color:#64748b}.p9{color:#64748b}.p10{color:#64748b}
+  /* Pack table */
+  .pack-table-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
   .pack-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
   .filter-btn{padding:4px 12px;border-radius:16px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:.75rem}
   .filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
@@ -69,11 +77,14 @@
   .ev-good{background:linear-gradient(90deg,#22c55e,#16a34a)}
   .ev-ok{background:linear-gradient(90deg,#f59e0b,#d97706)}
   .ev-bad{background:linear-gradient(90deg,#ef4444,#dc2626)}
+  /* Rarity table */
   .rarity-table{width:100%;font-size:.8rem}
+  /* Refresh button */
   .refresh-btn{position:fixed;bottom:20px;right:20px;background:#3b82f6;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.2rem;cursor:pointer;z-index:100;box-shadow:0 4px 12px rgba(59,130,246,.4)}
   .refresh-btn:hover{background:#2563eb}
   .refresh-btn.spinning{animation:spin 1s linear infinite}
   @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  /* Responsive */
   @media(max-width:900px){
     .hero{grid-template-columns:repeat(3,1fr)}
     .lb-prizes{grid-template-columns:1fr}
@@ -86,10 +97,14 @@
 </style>
 </head>
 <body>
+
 <div class="loading-bar" id="loadingBar"><div class="fill" id="loadingFill"></div></div>
 <div class="ts-badge" id="tsBadge">Loading...</div>
+
 <h1>⚡ Phygitals Tracker</h1>
 <p class="subtitle">Figbonner · 9Y7KcsQ8...kr1 · <span id="dataMode">Loading...</span></p>
+
+<!-- Hero Stats -->
 <div class="hero" id="heroStats">
   <div class="card"><div class="label">Weekly Rank</div><div class="value" id="hRank">—</div><div class="sub" id="hRankSub"></div></div>
   <div class="card"><div class="label">Weekly Volume</div><div class="value" id="hVol">—</div><div class="sub">this week</div></div>
@@ -97,8 +112,13 @@
   <div class="card"><div class="label">Claw Pulls</div><div class="value" id="hPulls">—</div><div class="sub">this week</div></div>
   <div class="card"><div class="label">Gap to Next</div><div class="value" id="hGapUp">—</div><div class="sub" id="hGapUpSub"></div></div>
   <div class="card"><div class="label">Lead Over Below</div><div class="value" id="hGapDown">—</div><div class="sub" id="hGapDownSub"></div></div>
-</div><div class="section-header">🏆 Prize Position — <span id="weekLabel">Week</span></div>
+</div>
+
+<!-- Gap Visualizer -->
+<div class="section-header">🏆 Prize Position — <span id="weekLabel">Week</span></div>
 <div class="gap-viz" id="gapViz"></div>
+
+<!-- Leaderboard & Prizes -->
 <div class="section-header">🏅 Weekly Leaderboard & Prizes</div>
 <div class="lb-prizes">
   <div class="lb-section">
@@ -116,6 +136,8 @@
     <div id="myPrizeNote" style="margin-top:12px;padding:10px;background:#1e293b;border-radius:8px;font-size:.8rem;color:#94a3b8"></div>
   </div>
 </div>
+
+<!-- Pack EV Dashboard -->
 <div class="section-header">🎰 Pack EV Dashboard — Sorted by EV/Price Ratio</div>
 <div class="pack-table-wrap">
   <div class="pack-filters" id="packFilters"></div>
@@ -124,6 +146,8 @@
     <tbody id="packBody"></tbody>
   </table>
 </div>
+
+<!-- Rarity Distribution -->
 <div class="section-header">🎲 Rarity Distribution by Pack</div>
 <div class="pack-table-wrap">
   <table class="rarity-table">
@@ -131,124 +155,300 @@
     <tbody id="rarityBody"></tbody>
   </table>
 </div>
-<button class="refresh-btn" onclick="loadAll()" title="Refresh data">↻</button><script>
-const MY_WALLET='9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVXvFWEi66R7872kr1';
-const API_BASE='https://api.phygitals.com';
-const PROXY='https://corsproxy.io/?';
-let allPacks=[],weeklyLB=[],allTimeLB=[],prizes=[];
-let currentLBView='weekly',currentFilter='all';
 
-async function apiFetch(path){
-  try{const r=await fetch(API_BASE+path,{signal:AbortSignal.timeout(5000)});if(r.ok)return r.json();}catch(e){}
-  const r=await fetch(PROXY+encodeURIComponent(API_BASE+path));
-  if(!r.ok)throw new Error('API error: '+r.status);return r.json();
+<button class="refresh-btn" onclick="loadAll()" title="Refresh data">↻</button>
+
+<script>
+// ——— CONFIG ———————————————————————————————————————————————————————————————————
+const MY_WALLET = '9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVXvFWEi66R7872kr1';
+const API_BASE = 'https://api.phygitals.com';
+const PROXY = 'https://corsproxy.io/?';
+
+// ——— STATE ————————————————————————————————————————————————————————————————————
+let allPacks = [], weeklyLB = [], allTimeLB = [], prizes = [];
+let currentLBView = 'weekly';
+let currentFilter = 'all';
+
+// ——— API FETCH ————————————————————————————————————————————————————————————————
+async function apiFetch(path) {
+  // Try direct first (works if on phygitals.com domain)
+  try {
+    const r = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
+    if (r.ok) return r.json();
+  } catch(e) {}
+  // Fallback to CORS proxy
+  const r = await fetch(PROXY + encodeURIComponent(API_BASE + path));
+  if (!r.ok) throw new Error('API error: ' + r.status);
+  return r.json();
 }
-function setLoading(p){document.getElementById('loadingFill').style.width=p+'%';}
-const fmt$=(v)=>'$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtK=(v)=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v.toString();
-const shortAddr=(a)=>a.substring(0,8)+'...'+a.substring(a.length-4);
-function getISOWeek(){const n=new Date(),j=new Date(n.getFullYear(),0,1),d=Math.floor((n-j)/864e5);return n.getFullYear()+'-'+String(Math.ceil((d+j.getDay()+1)/7)).padStart(2,'0');}
 
-async function loadAll(){
-  const btn=document.querySelector('.refresh-btn');btn.classList.add('spinning');setLoading(10);
-  try{
-    const[pd,wL,aL,pr]=await Promise.all([
+function setLoading(pct) {
+  document.getElementById('loadingFill').style.width = pct + '%';
+}
+
+// ——— HELPERS ——————————————————————————————————————————————————————————————————
+const fmt$ = (v) => '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtK = (v) => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
+const shortAddr = (a) => a.substring(0,8) + '...' + a.substring(a.length-4);
+function getISOWeek() {
+  const now = new Date();
+  const jan1 = new Date(now.getFullYear(), 0, 1);
+  const days = Math.floor((now - jan1) / 86400000);
+  return now.getFullYear() + '-' + String(Math.ceil((days + jan1.getDay() + 1) / 7)).padStart(2,'0');
+}
+
+// ——— LOAD ALL DATA ———————————————————————————————————————————————————————————
+async function loadAll() {
+  const btn = document.querySelector('.refresh-btn');
+  btn.classList.add('spinning');
+  setLoading(10);
+
+  try {
+    const [packsData, wLB, aLB, prizeData] = await Promise.all([
       apiFetch('/api/vm/available?includeRepacks=true'),
       apiFetch('/api/marketplace/leaderboard/weekly?pageSize=50'),
       apiFetch('/api/marketplace/leaderboard?pageSize=50'),
-      apiFetch('/api/marketplace/prize-data?week='+getISOWeek())
+      apiFetch('/api/marketplace/prize-data?week=' + getISOWeek())
     ]);
+
     setLoading(70);
-    allPacks=pd;weeklyLB=wL.leaderboard||[];allTimeLB=aL.leaderboard||[];prizes=pr.prizes||[];
+
+    allPacks = packsData;
+    weeklyLB = wLB.leaderboard || [];
+    allTimeLB = aLB.leaderboard || [];
+    prizes = prizeData.prizes || [];
+
     renderAll();
-    const ts=new Date().toISOString().replace('T',' ').substring(0,19)+' UTC';
-    document.getElementById('tsBadge').textContent='Live · '+ts;
-    document.getElementById('tsBadge').className='ts-badge live';
-    document.getElementById('dataMode').textContent='Live data · auto-refreshes every 5 min';
-    document.getElementById('weekLabel').textContent='Week '+getISOWeek().split('-')[1];
-    setLoading(100);setTimeout(()=>setLoading(0),500);
-  }catch(e){console.error('Load failed:',e);document.getElementById('tsBadge').textContent='Error loading';document.getElementById('dataMode').textContent='Failed — click ↻ to retry';setLoading(0);}
+
+    const ts = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
+    document.getElementById('tsBadge').textContent = 'Live · ' + ts;
+    document.getElementById('tsBadge').className = 'ts-badge live';
+    document.getElementById('dataMode').textContent = 'Live data · auto-refreshes on load';
+    document.getElementById('weekLabel').textContent = 'Week ' + getISOWeek().split('-')[1];
+
+    setLoading(100);
+    setTimeout(() => setLoading(0), 500);
+  } catch(e) {
+    console.error('Load failed:', e);
+    document.getElementById('tsBadge').textContent = 'Error loading data';
+    document.getElementById('dataMode').textContent = 'Failed to load — click ↻ to retry';
+    setLoading(0);
+  }
+
   btn.classList.remove('spinning');
 }
-function renderAll(){renderHero();renderGapViz();renderLeaderboard();renderPrizes();renderPacks();renderRarities();}function renderHero(){
-  const i=weeklyLB.findIndex(e=>e.address===MY_WALLET);if(i===-1)return;
-  const me=weeklyLB[i],vol=me.volume/1e6,rank=i+1;
-  const above=i>0?weeklyLB[i-1]:null,below=i<weeklyLB.length-1?weeklyLB[i+1]:null;
-  const gU=above?(above.volume-me.volume)/1e6:0,gD=below?(me.volume-below.volume)/1e6:0;
-  document.getElementById('hRank').textContent='#'+rank;
-  document.getElementById('hRankSub').textContent='of '+weeklyLB.length+' tracked';
-  document.getElementById('hVol').textContent=fmt$(vol);
-  document.getElementById('hPts').textContent=fmtK(me.points);
-  document.getElementById('hPtsSub').textContent=me.points.toLocaleString();
-  document.getElementById('hPulls').textContent=me.packs;
-  document.getElementById('hGapUp').textContent=fmt$(gU);
-  document.getElementById('hGapUpSub').textContent=above?shortAddr(above.address):'';
-  document.getElementById('hGapDown').textContent=fmt$(gD);
-  document.getElementById('hGapDownSub').textContent=below?'buffer above #'+(rank+1):'';
+
+// ——— RENDER ALL ——————————————————————————————————————————————————————————————
+function renderAll() {
+  renderHero();
+  renderGapViz();
+  renderLeaderboard();
+  renderPrizes();
+  renderPacks();
+  renderRarities();
 }
-function renderGapViz(){
-  const i=weeklyLB.findIndex(e=>e.address===MY_WALLET);if(i===-1)return;
-  const me=weeklyLB[i],above=i>0?weeklyLB[i-1]:null,below=i<weeklyLB.length-1?weeklyLB[i+1]:null,rank=i+1;
-  let h='';
-  if(above){const g=(above.volume-me.volume)/1e6;h+='<div class="player"><div class="name">'+shortAddr(above.address)+'</div><div class="vol">'+fmt$(above.volume/1e6)+' · #'+(rank-1)+'</div></div>';h+='<div class="gap-info gap-up"><div class="amount">↑ '+fmt$(g)+' gap</div><div class="label">volume needed to reach #'+(rank-1)+'</div></div>';}
-  h+='<div class="player me"><div class="name">Figbonner 🎮</div><div class="vol">'+fmt$(me.volume/1e6)+' · #'+rank+'</div></div>';
-  if(below){const g=(me.volume-below.volume)/1e6;h+='<div class="gap-info gap-down"><div class="amount">↓ '+fmt$(g)+' lead</div><div class="label">buffer above #'+(rank+1)+'</div></div>';h+='<div class="player"><div class="name">'+shortAddr(below.address)+'</div><div class="vol">'+fmt$(below.volume/1e6)+' · #'+(rank+1)+'</div></div>';}
-  document.getElementById('gapViz').innerHTML=h;
+
+// ——— HERO STATS ——————————————————————————————————————————————————————————————
+function renderHero() {
+  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+  if (myIdx === -1) return;
+
+  const me = weeklyLB[myIdx];
+  const vol = me.volume / 1e6;
+  const rank = myIdx + 1;
+  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
+  const below = myIdx < weeklyLB.length-1 ? weeklyLB[myIdx+1] : null;
+  const gapUp = above ? (above.volume - me.volume) / 1e6 : 0;
+  const gapDown = below ? (me.volume - below.volume) / 1e6 : 0;
+
+  document.getElementById('hRank').textContent = '#' + rank;
+  document.getElementById('hRankSub').textContent = 'of ' + weeklyLB.length + ' tracked';
+  document.getElementById('hVol').textContent = fmt$(vol);
+  document.getElementById('hPts').textContent = fmtK(me.points);
+  document.getElementById('hPtsSub').textContent = me.points.toLocaleString();
+  document.getElementById('hPulls').textContent = me.packs;
+  document.getElementById('hGapUp').textContent = fmt$(gapUp);
+  document.getElementById('hGapUpSub').textContent = above ? shortAddr(above.address) : '';
+  document.getElementById('hGapDown').textContent = fmt$(gapDown);
+  document.getElementById('hGapDownSub').textContent = below ? 'buffer above #' + (rank+1) : '';
 }
-function showLB(v){currentLBView=v;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));event.target.classList.add('active');renderLeaderboard();}
-function renderLeaderboard(){
-  const data=currentLBView==='weekly'?weeklyLB:allTimeLB;let h='';
-  data.forEach((e,i)=>{const rank=i+1,isMe=e.address===MY_WALLET,vol=e.volume/1e6,name=isMe?'Figbonner':shortAddr(e.address),rc=rank<=3?' rank-'+rank:'';
-    h+='<tr class="'+(isMe?'me-row':'')+'"><td><span class="rank-badge'+rc+'">'+rank+'</span></td><td><strong>'+name+'</strong></td><td>'+fmt$(vol)+'</td><td>'+e.packs+'</td><td class="points-col">'+e.points.toLocaleString()+'</td></tr>';});
-  document.getElementById('lbBody').innerHTML=h;
-}function renderPrizes(){
-  const colors=['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];let h='';
-  prizes.forEach((p,i)=>{h+='<div class="prize-card"><div class="rank-title '+(colors[i]||'p10')+'">'+p.rank+'</div><div class="prize-desc">'+p.description+'</div></div>';});
-  document.getElementById('prizeGrid').innerHTML=h;
-  const myIdx=weeklyLB.findIndex(e=>e.address===MY_WALLET);
-  if(myIdx!==-1){const rank=myIdx+1;const above=myIdx>0?weeklyLB[myIdx-1]:null;const gU=above?(above.volume-weeklyLB[myIdx].volume)/1e6:0;const abovePrize=rank>1?prizes[rank-2]:null;
-    let note='🎯 Your position: <strong>#'+rank+'</strong>';
-    if(prizes[rank-1])note+=' — '+prizes[rank-1].description;
-    if(abovePrize&&gU>0)note+='<br>Climb '+fmt$(gU)+' to reach #'+(rank-1)+' → unlock '+abovePrize.description;
-    document.getElementById('myPrizeNote').innerHTML=note;}
+
+// ——— GAP VISUALIZER ——————————————————————————————————————————————————————————
+function renderGapViz() {
+  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+  if (myIdx === -1) return;
+
+  const me = weeklyLB[myIdx];
+  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
+  const below = myIdx < weeklyLB.length-1 ? weeklyLB[myIdx+1] : null;
+  const rank = myIdx + 1;
+
+  let html = '';
+  if (above) {
+    const gapUp = (above.volume - me.volume) / 1e6;
+    html += `<div class="player"><div class="name">${shortAddr(above.address)}</div><div class="vol">${fmt$(above.volume/1e6)} · #${rank-1}</div></div>`;
+    html += `<div class="gap-info gap-up"><div class="amount">↑ ${fmt$(gapUp)} gap</div><div class="label">volume needed to reach #${rank-1}</div></div>`;
+  }
+  html += `<div class="player me"><div class="name">Figbonner 🎮</div><div class="vol">${fmt$(me.volume/1e6)} · #${rank}</div></div>`;
+  if (below) {
+    const gapDown = (me.volume - below.volume) / 1e6;
+    html += `<div class="gap-info gap-down"><div class="amount">↓ ${fmt$(gapDown)} lead</div><div class="label">buffer above #${rank+1}</div></div>`;
+    html += `<div class="player"><div class="name">${shortAddr(below.address)}</div><div class="vol">${fmt$(below.volume/1e6)} · #${rank+1}</div></div>`;
+  }
+
+  document.getElementById('gapViz').innerHTML = html;
 }
-function renderPackFilters(){
-  const cats=['all',...new Set(allPacks.map(p=>p.repack?'creator':p.category))];let h='';
-  cats.forEach(c=>{const label=c==='all'?'All Packs':c==='creator'?'🎨 Creator':c.charAt(0).toUpperCase()+c.slice(1);
-    const count=c==='all'?allPacks.length:c==='creator'?allPacks.filter(p=>p.repack).length:allPacks.filter(p=>!p.repack&&p.category===c).length;
-    h+='<button class="filter-btn '+(c===currentFilter?'active':'')+'" onclick="filterPacks(''+c+'')">'+label+' ('+count+')</button>';});
-  document.getElementById('packFilters').innerHTML=h;
+
+// ——— LEADERBOARD ————————————————————————————————————————————————————————————
+function showLB(view) {
+  currentLBView = view;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderLeaderboard();
 }
-function filterPacks(c){currentFilter=c;renderPacks();}
-function renderPacks(){
-  renderPackFilters();let packs=[...allPacks];
-  if(currentFilter==='creator')packs=packs.filter(p=>p.repack);
-  else if(currentFilter!=='all')packs=packs.filter(p=>!p.repack&&p.category===currentFilter);
-  packs.sort((a,b)=>(b.ev/Number(b.mint_price))-(a.ev/Number(a.mint_price)));
-  let h='';
-  packs.forEach(p=>{const price=Number(p.mint_price),ratio=price>0?(p.ev/price*100).toFixed(1):0;
-    const evClass=ratio>=105?'ev-good':ratio>=98?'ev-ok':'ev-bad';
-    const catClass=p.repack?'cat-creator':'cat-'+p.category.replace(/\s+/g,'-');
-    const catLabel=p.repack?(p.creator_profile?.username||'Creator'):p.category;
-    const packLabel=p.repack?p.name+' <span style="color:#94a3b8;font-size:.7rem">by '+(p.creator_profile?.username||'?')+'</span>':p.name;
-    const buyback=p.buyback_percent?(p.buyback_percent*100).toFixed(0)+'%':'—';
-    const lastPull=p.last_pull?p.last_pull.substring(0,10):'—';
-    h+='<tr><td><span class="stock-dot '+(p.in_stock?'stock-in':'stock-out')+'"></span></td><td>'+packLabel+'</td><td><span class="cat-badge '+catClass+'">'+catLabel+'</span></td><td>$'+price+'</td><td><strong>$'+(p.ev?.toFixed(2)||'—')+'</strong></td><td>$'+(p.min_ev?.toFixed(1)||'?')+'–$'+(p.max_ev?.toFixed(0)||'?')+'</td><td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar '+evClass+'" style="width:'+Math.min(ratio,120)*0.6+'px"></div><strong>'+ratio+'%</strong></div></td><td>'+buyback+'</td><td>'+(p.num_pulls_7d?.toLocaleString()||0)+'</td><td>'+lastPull+'</td></tr>';});
-  document.getElementById('packBody').innerHTML=h;
-}function renderRarities(){
-  let packs=[...allPacks];
-  if(currentFilter==='creator')packs=packs.filter(p=>p.repack);
-  else if(currentFilter!=='all')packs=packs.filter(p=>!p.repack&&p.category===currentFilter);
-  packs.sort((a,b)=>(b.ev/Number(b.mint_price))-(a.ev/Number(a.mint_price)));
-  let h='';
-  packs.forEach(p=>{const rarities=p.rarity_distribution||[];
-    const gw=(n)=>{const r=rarities.find(rd=>rd.name?.toLowerCase()===n.toLowerCase());return r?r.weight+'%':'—%';};
-    const label=p.repack?p.name+' <span style="color:#94a3b8">('+(p.creator_profile?.username||'creator')+')</span>':p.name+' <span style="color:#94a3b8">('+p.category+')</span>';
-    h+='<tr><td>'+label+'</td><td>$'+Number(p.mint_price)+'</td><td style="color:#94a3b8">'+gw('Common')+'</td><td style="color:#22c55e">'+gw('Uncommon')+'</td><td style="color:#3b82f6">'+gw('Rare')+'</td><td style="color:#a855f7">'+gw('Epic')+'</td><td style="color:#ef4444">'+(gw('Legendary')!=='—%'?gw('Legendary'):gw('Mythic'))+'</td></tr>';});
-  document.getElementById('rarityBody').innerHTML=h;
+
+function renderLeaderboard() {
+  const data = currentLBView === 'weekly' ? weeklyLB : allTimeLB;
+  let html = '';
+  data.forEach((e, i) => {
+    const rank = i + 1;
+    const isMe = e.address === MY_WALLET;
+    const vol = e.volume / 1e6;
+    const name = isMe ? 'Figbonner' : shortAddr(e.address);
+    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
+    html += `<tr class="${isMe ? 'me-row' : ''}">
+      <td><span class="rank-badge${rankClass}">${rank}</span></td>
+      <td><strong>${name}</strong></td>
+      <td>${fmt$(vol)}</td>
+      <td>${e.packs}</td>
+      <td class="points-col">${e.points.toLocaleString()}</td>
+    </tr>`;
+  });
+  document.getElementById('lbBody').innerHTML = html;
 }
+
+// ——— PRIZES —————————————————————————————————————————————————————————————————
+function renderPrizes() {
+  const colors = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
+  let html = '';
+  prizes.forEach((p, i) => {
+    html += `<div class="prize-card">
+      <div class="rank-title ${colors[i] || 'p10'}">${p.rank}</div>
+      <div class="prize-desc">${p.description}</div>
+    </div>`;
+  });
+  document.getElementById('prizeGrid').innerHTML = html;
+
+  // My prize note
+  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+  if (myIdx !== -1) {
+    const rank = myIdx + 1;
+    const myPrize = prizes.find(p => p.rank === rank + (['st','nd','rd'][rank-1] || 'th'));
+    const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
+    const gapUp = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
+    const abovePrize = rank > 1 ? prizes[rank-2] : null;
+    let note = `🎯 Your position: <strong>#${rank}</strong>`;
+    if (myPrize) note += ` — ${myPrize.description}`;
+    if (abovePrize && gapUp > 0) note += `<br>Climb ${fmt$(gapUp)} to reach #${rank-1} → unlock ${abovePrize.description}`;
+    document.getElementById('myPrizeNote').innerHTML = note;
+  }
+}
+
+// ——— PACK EV TABLE ——————————————————————————————————————————————————————————
+function renderPackFilters() {
+  const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : p.category))];
+  let html = '';
+  cats.forEach(c => {
+    const label = c === 'all' ? 'All Packs' : c === 'creator' ? '🎨 Creator' : c.charAt(0).toUpperCase() + c.slice(1);
+    const count = c === 'all' ? allPacks.length : c === 'creator' ? allPacks.filter(p=>p.repack).length : allPacks.filter(p=>!p.repack && p.category===c).length;
+    html += `<button class="filter-btn ${c===currentFilter?'active':''}" onclick="filterPacks('${c}')">${label} (${count})</button>`;
+  });
+  document.getElementById('packFilters').innerHTML = html;
+}
+
+function filterPacks(cat) {
+  currentFilter = cat;
+  renderPacks();
+}
+
+function renderPacks() {
+  renderPackFilters();
+
+  let packs = [...allPacks];
+  if (currentFilter === 'creator') {
+    packs = packs.filter(p => p.repack);
+  } else if (currentFilter !== 'all') {
+    packs = packs.filter(p => !p.repack && p.category === currentFilter);
+  }
+
+  // Sort by EV/Price ratio descending
+  packs.sort((a, b) => {
+    const ratioA = a.ev / Number(a.mint_price);
+    const ratioB = b.ev / Number(b.mint_price);
+   return ratioB - ratioA;
+  });
+
+  let html = '';
+  packs.forEach(p => {
+    const price = Number(p.mint_price);
+    const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : 0;
+    const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
+    const catClass = p.repack ? 'cat-creator' : 'cat-' + p.category.replace(/\s+/g, '-');
+    const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : p.category;
+    const packLabel = p.repack ? `${p.name} <span style="color:#94a3b8;font-size:.7rem">by ${p.creator_profile?.username || '?'}</span>` : p.name;
+    const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '—';
+    const lastPull = p.last_pull ? p.last_pull.substring(0,10) : '—';
+
+    html += `<tr>
+      <td><span class="stock-dot ${p.in_stock ? 'stock-in' : 'stock-out'}"></span></td>
+      <td>${packLabel}</td>
+      <td><span class="cat-badge ${catClass}">${catLabel}</span></td>
+      <td>$${price}</td>
+      <td><strong>$${p.ev?.toFixed(2) || '—'}</strong></td>
+      <td>$${p.min_ev?.toFixed(1) || '?'}–$${p.max_ev?.toFixed(0) || '?'}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ${evClass}" style="width:${Math.min(ratio, 120)*0.6}px"></div><strong>${ratio}%</strong></div></td>
+      <td>${buyback}</td>
+      <td>${p.num_pulls_7d?.toLocaleString() || 0}</td>
+      <td>${lastPull}</td>
+    </tr>`;
+  });
+  document.getElementById('packBody').innerHTML = html;
+}
+
+// ——— RARITY TABLE ———————————————————————————————————————————————————————————
+function renderRarities() {
+  let packs = [...allPacks];
+  if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
+  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && p.category === currentFilter);
+
+  packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
+
+  let html = '';
+  packs.forEach(p => {
+    const rarities = p.rarity_distribution || [];
+    const getWeight = (name) => {
+      const r = rarities.find(rd => rd.name?.toLowerCase() === name.toLowerCase());
+      return r ? r.weight + '%' : '—%';
+    };
+    const label = p.repack ? `${p.name} <span style="color:#94a3b8">(${p.creator_profile?.username || 'creator'})</span>` : `${p.name} <span style="color:#94a3b8">(${p.category})</span>`;
+
+    html += `<tr>
+      <td>${label}</td>
+      <td>$${Number(p.mint_price)}</td>
+      <td style="color:#94a3b8">${getWeight('Common')}</td>
+      <td style="color:#22c55e">${getWeight('Uncommon')}</td>
+      <td style="color:#3b82f6">${getWeight('Rare')}</td>
+      <td style="color:#a855f7">${getWeight('Epic')}</td>
+      <td style="color:#ef4444">${getWeight('Legendary') !== '—%' ? getWeight('Legendary') : getWeight('Mythic')}</td>
+    </tr>`;
+  });
+  document.getElementById('rarityBody').innerHTML = html;
+}
+
+// ——— INIT ———————————————————————————————————————————————————————————————————
 loadAll();
-setInterval(loadAll,5*60*1000);
+// Auto-refresh every 5 minutes
+setInterval(loadAll, 5 * 60 * 1000);
 </script>
 </body>
 </html>
