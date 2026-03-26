@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phygitals Tracker — Figbonner</title>
+<title>Phygitals Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -156,7 +156,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 <div class="ts-badge" id="tsBadge">Loading...</div>
 
 <h1>⚡ Phygitals Tracker</h1>
-<p class="subtitle">Figbonner · 9Y7KcsQ8...kr1 · <span id="dataMode">Loading...</span></p>
+<p class="subtitle"><span id="dataMode">Loading...</span></p>
 
 <!-- Hero Stats -->
 <div class="hero" id="heroStats">
@@ -450,7 +450,7 @@ function renderGapViz() {
     html += `<div class="player"><div class="name">${shortAddr(above.address)}</div><div class="vol">${fmt$(above.volume/1e6)} · #${rank-1}</div></div>`;
     html += `<div class="gap-info gap-up"><div class="amount">↑ ${fmt$(gapUp)} gap</div><div class="label">volume needed to reach #${rank-1}</div></div>`;
   }
-  html += `<div class="player me"><div class="name">Figbonner 🎮</div><div class="vol">${fmt$(me.volume/1e6)} · #${rank}</div></div>`;
+  html += `<div class="player me"><div class="name">${shortAddr(MY_WALLET)} 🎮</div><div class="vol">${fmt$(me.volume/1e6)} · #${rank}</div></div>`;
   if (below) {
     const gapDown = (me.volume - below.volume) / 1e6;
     html += `<div class="gap-info gap-down"><div class="amount">↓ ${fmt$(gapDown)} lead</div><div class="label">buffer above #${rank+1}</div></div>`;
@@ -565,7 +565,7 @@ function renderLeaderboard() {
     const rank = i + 1;
     const isMe = e.address === MY_WALLET;
     const vol = e.volume / 1e6;
-    const name = isMe ? 'Figbonner' : shortAddr(e.address);
+    const name = shortAddr(e.address);
     const rankClass = rank <= 3 ? ` rank-${rank}` : '';
     html += `<tr class="${isMe ? 'me-row' : ''}">
       <td><span class="rank-badge${rankClass}">${rank}</span></td>
