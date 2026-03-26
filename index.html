@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Phygitals Tracker â Figbonner</title>
+<title>Phygitals Tracker — Figbonner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -127,8 +127,8 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
 <header>
   <div class="logo">
     <div>
-      <h1>â¡ Phygitals Tracker</h1>
-      <div class="sub">Figbonner Â· 9Y7KcsQ8...kr1 Â· Live snapshot</div>
+      <h1>⚡ Phygitals Tracker</h1>
+      <div class="sub">Figbonner · 9Y7KcsQ8...kr1 · Live snapshot</div>
     </div>
   </div>
   <div class="ts-badge" id="tsDisplay">Loading...</div>
@@ -170,34 +170,34 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
 
 <!-- Gap visualizer -->
 <div class="section">
-  <div class="section-title">ð¯ Prize Position â Week 13</div>
+  <div class="section-title">🎯 Prize Position — Week 13</div>
   <div class="gap-indicator">
     <div class="gap-player">
       <div class="name" style="color:#60a5fa">RapidBattler6889</div>
-      <div class="vol">$227,363 Â· #4</div>
+      <div class="vol">$227,363 · #4</div>
     </div>
     <div class="gap-arrow">
-      <div class="gap-amount">â $78,519 gap</div>
+      <div class="gap-amount">↑ $78,519 gap</div>
       <div class="gap-label">volume needed to reach #4</div>
     </div>
     <div class="gap-player" style="border: 1px solid #facc15; border-radius: 8px; padding: 8px 16px;">
-      <div class="name" style="color:#facc15">Figbonner ð</div>
-      <div class="vol">$148,844 Â· #5</div>
+      <div class="name" style="color:#facc15">Figbonner 👈</div>
+      <div class="vol">$148,844 · #5</div>
     </div>
     <div class="gap-arrow">
-      <div class="gap-amount" style="color:#4ade80">â $12,989 lead</div>
+      <div class="gap-amount" style="color:#4ade80">↓ $12,989 lead</div>
       <div class="gap-label">buffer above #6</div>
     </div>
     <div class="gap-player">
       <div class="name" style="color:#718096">FrostGuardian4183</div>
-      <div class="vol">$135,855 Â· #6</div>
+      <div class="vol">$135,855 · #6</div>
     </div>
   </div>
 </div>
 
 <!-- Prize tiers + Leaderboard -->
 <div class="section">
-  <div class="section-title">ð Weekly Leaderboard &amp; Prizes</div>
+  <div class="section-title">🏆 Weekly Leaderboard &amp; Prizes</div>
   <div class="two-col">
     <!-- Leaderboard -->
     <div class="panel">
@@ -224,9 +224,9 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
       <div class="prize-grid" id="prize-grid"></div>
       <div class="spacer"></div>
       <div class="panel" style="padding:14px 16px; background: rgba(250,204,21,0.04); border-color: rgba(250,204,21,0.2);">
-        <div style="font-size:12px; color:#facc15; font-weight:700; margin-bottom:8px;">ð Your current prize: #5</div>
+        <div style="font-size:12px; color:#facc15; font-weight:700; margin-bottom:8px;">📍 Your current prize: #5</div>
         <div style="font-size:13px; color:#e2e8f0;">$25 Rookie Voucher + 25,000 Points</div>
-        <div style="font-size:11px; color:#718096; margin-top:6px;">Climb $78,519 to reach #4 â unlock 3Ã $ Elite Vouchers</div>
+        <div style="font-size:11px; color:#718096; margin-top:6px;">Climb $78,519 to reach #4 → unlock 3× $ Elite Vouchers</div>
       </div>
     </div>
   </div>
@@ -234,7 +234,7 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
 
 <!-- Pack EV Dashboard -->
 <div class="section">
-  <div class="section-title">ð¦ Pack EV Dashboard <span>â sorted by EV/Price ratio</span></div>
+  <div class="section-title">📦 Pack EV Dashboard <span>— sorted by EV/Price ratio</span></div>
   <div class="panel">
     <table>
       <thead>
@@ -251,7 +251,7 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
 
 <!-- Rarity breakdown -->
 <div class="section">
-  <div class="section-title">ð² Rarity Distribution by Pack</div>
+  <div class="section-title">🎲 Rarity Distribution by Pack</div>
   <div class="panel">
     <table>
       <thead>
@@ -265,7 +265,7 @@ tbody tr.me td:first-child { border-left: 2px solid #facc15; }
 <div style="height:32px"></div>
 
 <script>
-// âââ LIVE DATA ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── LIVE DATA ──────────────────────────────────────────────────────────────
 const DATA = {
   ts: "2026-03-25T21:29 UTC",
   me: { weeklyRank:5, weeklyVol:148844.11, weeklyPulls:181, weeklyPts:14878493, gapToNext:78519.03, gapFromBelow:12988.80, allTimeRank:5 },
@@ -315,9 +315,9 @@ const DATA = {
     {name:"Sealed Pack",cat:"pokemon",price:100,ev:98.80,minEv:90,maxEv:110,ratio:98.8,buyback:90,pulls7d:312,inStock:true,lastPull:"2026-03-25",rarities:{Common:45,Uncommon:30,Rare:18,Epic:6,Mythic:1}},
   ],
   prizes: [
-    {rank:"1st",desc:"2 Ã $250 Lestion Vouchers"},
-    {rank:"2nd",desc:"1 Ã $250 Legend Voucher"},
-    {rank:"3rd",desc:"3 Ã $50 Elite Vouchers"},
+    {rank:"1st",desc:"2 × $250 Lestion Vouchers"},
+    {rank:"2nd",desc:"1 × $250 Legend Voucher"},
+    {rank:"3rd",desc:"3 × $50 Elite Vouchers"},
     {rank:"4th",desc:"$25 Voucher + 30,000 pts"},
     {rank:"5th",desc:"$25 Voucher + 25,000 pts"},
     {rank:"6th",desc:"$25 Voucher + 20,000 pts"},
@@ -328,7 +328,7 @@ const DATA = {
   ]
 };
 
-// âââ RENDER ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── RENDER ────────────────────────────────────────────────────────────────
 document.getElementById('tsDisplay').textContent = 'Snapshot: ' + DATA.ts;
 
 function rankChip(r, isMe) {
@@ -345,7 +345,7 @@ DATA.weeklyLB.forEach(p => {
   if (p.isMe) tr.className = 'me';
   tr.innerHTML = `
     <td>${rankChip(p.rank, p.isMe)}</td>
-    <td style="font-weight:${p.isMe?'700':'400'}">${p.name}${p.isMe?' ð':''}</td>
+    <td style="font-weight:${p.isMe?'700':'400'}">${p.name}${p.isMe?' 👈':''}</td>
     <td>$${p.vol.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:3})}</td>
     <td>${p.pulls.toLocaleString()}</td>
     <td style="color:#a78bfa">${p.pts.toLocaleString()}</td>
@@ -359,7 +359,7 @@ DATA.alltimeLB.forEach(p => {
   if (p.isMe) tr.className = 'me';
   tr.innerHTML = `
     <td>${rankChip(p.rank, p.isMe)}</td>
-    <td style="font-weight:${p.isMe?'700':'400'}">${p.name}${p.isMe?' ð':''}</td>
+    <td style="font-weight:${p.isMe?'700':'400'}">${p.name}${p.isMe?' 👈':''}</td>
     <td>$${p.vol.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</td>
     <td>${p.pulls.toLocaleString()}</td>
     <td style="color:#a78bfa">${p.pts.toLocaleString()}</td>
@@ -389,7 +389,7 @@ DATA.packs.forEach(p => {
     <td><span class="badge ${catBadge}">${p.cat}</span></td>
     <td>$${p.price}</td>
     <td style="font-weight:700">$${p.ev.toFixed(2)}</td>
-    <td style="color:#718096;font-size:12px">$${p.minEv}â$${p.maxEv}</td>
+    <td style="color:#718096;font-size:12px">$${p.minEv}–$${p.maxEv}</td>
     <td>
       <div class="ev-bar-wrap">
         <div class="ev-bar" style="width:${barWidth}px;background:${ratioColor}"></div>
@@ -410,11 +410,11 @@ DATA.packs.forEach(p => {
   tr.innerHTML = `
     <td style="font-weight:600">${p.name} <span style="color:#4a5568;font-size:11px">(${p.cat})</span></td>
     <td>$${p.price}</td>
-    <td class="Common">${r.Common||'â'}%</td>
-    <td class="Uncommon">${r.Uncommon||'â'}%</td>
-    <td class="Rare">${r.Rare||'â'}%</td>
-    <td class="Epic">${r.Epic||'â'}%</td>
-    <td class="Mythic">${r.Mythic||r.Legendary||'â'}%</td>
+    <td class="Common">${r.Common||'—'}%</td>
+    <td class="Uncommon">${r.Uncommon||'—'}%</td>
+    <td class="Rare">${r.Rare||'—'}%</td>
+    <td class="Epic">${r.Epic||'—'}%</td>
+    <td class="Mythic">${r.Mythic||r.Legendary||'—'}%</td>
   `;
   rarityBody.appendChild(tr);
 });
