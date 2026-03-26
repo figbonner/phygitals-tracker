@@ -378,7 +378,7 @@ function renderPacks() {
   if (currentFilter === 'creator') {
     packs = packs.filter(p => p.repack);
   } else if (currentFilter !== 'all') {
-    packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter;
+    packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
   }
 
   // Sort by EV/Price ratio descending
