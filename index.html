@@ -286,14 +286,14 @@ function renderGapViz() {
   let html = '';
   if (above) {
     const gapUp = (above.volume - me.volume) / 1e6;
-    html += `<div class="player"><div class="name">${shortAddr(above.address)}</div><div class="vol">${fmt$(above.volume/1e6)} · #${rank-1}</div></div>`;
-    html += `<div class="gap-info gap-up"><div class="amount">↑ ${fmt$(gapUp)} gap</div><div class="label">volume needed to reach #${rank-1}</div></div>`;
+    html += `\x3cdiv class="player">\x3cdiv class="name">${shortAddr(above.address)}\x3c/div>\x3cdiv class="vol">${fmt$(above.volume/1e6)} · #${rank-1}\x3c/div>\x3c/div>`;
+    html += `\x3cdiv class="gap-info gap-up">\x3cdiv class="amount">↑ ${fmt$(gapUp)} gap\x3c/div>\x3cdiv class="label">volume needed to reach #${rank-1}\x3c/div>\x3c/div>`;
   }
-  html += `<div class="player me"><div class="name">Figbonner 🎮</div><div class="vol">${fmt$(me.volume/1e6)} · #${rank}</div></div>`;
+  html += `\x3cdiv class="player me">\x3cdiv class="name">Figbonner 🎮\x3c/div>\x3cdiv class="vol">${fmt$(me.volume/1e6)} · #${rank}\x3c/div>\x3c/div>`;
   if (below) {
     const gapDown = (me.volume - below.volume) / 1e6;
-    html += `<div class="gap-info gap-down"><div class="amount">↓ ${fmt$(gapDown)} lead</div><div class="label">buffer above #${rank+1}</div></div>`;
-    html += `<div class="player"><div class="name">${shortAddr(below.address)}</div><div class="vol">${fmt$(below.volume/1e6)} · #${rank+1}</div></div>`;
+    html += `\x3cdiv class="gap-info gap-down">\x3cdiv class="amount">↓ ${fmt$(gapDown)} lead\x3c/div>\x3cdiv class="label">buffer above #${rank+1}\x3c/div>\x3c/div>`;
+    html += `\x3cdiv class="player">\x3cdiv class="name">${shortAddr(below.address)}\x3c/div>\x3cdiv class="vol">${fmt$(below.volume/1e6)} · #${rank+1}\x3c/div>\x3c/div>`;
   }
 
   document.getElementById('gapViz').innerHTML = html;
@@ -316,13 +316,13 @@ function renderLeaderboard() {
     const vol = e.volume / 1e6;
     const name = isMe ? 'Figbonner' : shortAddr(e.address);
     const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-    html += `<tr class="${isMe ? 'me-row' : ''}">
-      <td><span class="rank-badge${rankClass}">${rank}</span></td>
-      <td><strong>${name}</strong></td>
-      <td>${fmt$(vol)}</td>
-      <td>${e.packs}</td>
-      <td class="points-col">${e.points.toLocaleString()}</td>
-    </tr>`;
+    html += `\x3ctr class="${isMe ? 'me-row' : ''}">
+      \x3ctd>\x3cspan class="rank-badge${rankClass}">${rank}\x3c/span>\x3c/td>
+      \x3ctd>\x3cstrong>${name}\x3c/strong>\x3c/td>
+      \x3ctd>${fmt$(vol)}\x3c/td>
+      \x3ctd>${e.packs}\x3c/td>
+      \x3ctd class="points-col">${e.points.toLocaleString()}\x3c/td>
+    \x3c/tr>`;
   });
   document.getElementById('lbBody').innerHTML = html;
 }
@@ -332,10 +332,10 @@ function renderPrizes() {
   const colors = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
   let html = '';
   prizes.forEach((p, i) => {
-    html += `<div class="prize-card">
-      <div class="rank-title ${colors[i] || 'p10'}">${p.rank}</div>
-      <div class="prize-desc">${p.description}</div>
-    </div>`;
+    html += `\x3cdiv class="prize-card">
+      \x3cdiv class="rank-title ${colors[i] || 'p10'}">${p.rank}\x3c/div>
+      \x3cdiv class="prize-desc">${p.description}\x3c/div>
+    \x3c/div>`;
   });
   document.getElementById('prizeGrid').innerHTML = html;
 
@@ -347,9 +347,9 @@ function renderPrizes() {
     const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
     const gapUp = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
     const abovePrize = rank > 1 ? prizes[rank-2] : null;
-    let note = `🎯 Your position: <strong>#${rank}</strong>`;
+    let note = `🎯 Your position: \x3cstrong>#${rank}\x3c/strong>`;
     if (myPrize) note += ` — ${myPrize.description}`;
-    if (abovePrize && gapUp > 0) note += `<br>Climb ${fmt$(gapUp)} to reach #${rank-1} → unlock ${abovePrize.description}`;
+    if (abovePrize && gapUp > 0) note += `\x3cbr>Climb ${fmt$(gapUp)} to reach #${rank-1} → unlock ${abovePrize.description}`;
     document.getElementById('myPrizeNote').innerHTML = note;
   }
 }
@@ -361,7 +361,7 @@ function renderPackFilters() {
   cats.forEach(c => {
     const label = c === 'all' ? 'All Packs' : c === 'creator' ? '🎨 Creator' : c.charAt(0).toUpperCase() + c.slice(1);
     const count = c === 'all' ? allPacks.length : c === 'creator' ? allPacks.filter(p=>p.repack).length : allPacks.filter(p=>!p.repack && p.category===c).length;
-    html += `<button class="filter-btn ${c===currentFilter?'active':''}" onclick="filterPacks('${c}')">${label} (${count})</button>`;
+    html += `\x3cbutton class="filter-btn ${c===currentFilter?'active':''}" onclick="filterPacks('${c}')">${label} (${count})\x3c/button>`;
   });
   document.getElementById('packFilters').innerHTML = html;
 }
@@ -380,12 +380,14 @@ function renderPacks() {
   } else if (currentFilter !== 'all') {
     packs = packs.filter(p => !p.repack && p.category === currentFilter);
   }
+er);
+  }
 
   // Sort by EV/Price ratio descending
   packs.sort((a, b) => {
     const ratioA = a.ev / Number(a.mint_price);
     const ratioB = b.ev / Number(b.mint_price);
-   return ratioB - ratioA;
+    return ratioB - ratioA;
   });
 
   let html = '';
@@ -395,22 +397,22 @@ function renderPacks() {
     const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
     const catClass = p.repack ? 'cat-creator' : 'cat-' + p.category.replace(/\s+/g, '-');
     const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : p.category;
-    const packLabel = p.repack ? `${p.name} <span style="color:#94a3b8;font-size:.7rem">by ${p.creator_profile?.username || '?'}</span>` : p.name;
+    const packLabel = p.repack ? `${p.name} \x3cspan style="color:#94a3b8;font-size:.7rem">by ${p.creator_profile?.username || '?'}\x3c/span>` : p.name;
     const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '—';
     const lastPull = p.last_pull ? p.last_pull.substring(0,10) : '—';
 
-    html += `<tr>
-      <td><span class="stock-dot ${p.in_stock ? 'stock-in' : 'stock-out'}"></span></td>
-      <td>${packLabel}</td>
-      <td><span class="cat-badge ${catClass}">${catLabel}</span></td>
-      <td>$${price}</td>
-      <td><strong>$${p.ev?.toFixed(2) || '—'}</strong></td>
-      <td>$${p.min_ev?.toFixed(1) || '?'}–$${p.max_ev?.toFixed(0) || '?'}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ${evClass}" style="width:${Math.min(ratio, 120)*0.6}px"></div><strong>${ratio}%</strong></div></td>
-      <td>${buyback}</td>
-      <td>${p.num_pulls_7d?.toLocaleString() || 0}</td>
-      <td>${lastPull}</td>
-    </tr>`;
+    html += `\x3ctr>
+      \x3ctd>\x3cspan class="stock-dot ${p.in_stock ? 'stock-in' : 'stock-out'}">\x3c/span>\x3c/td>
+      \x3ctd>${packLabel}\x3c/td>
+      \x3ctd>\x3cspan class="cat-badge ${catClass}">${catLabel}\x3c/span>\x3c/td>
+      \x3ctd>$${price}\x3c/td>
+      \x3ctd>\x3cstrong>$${p.ev?.toFixed(2) || '—'}\x3c/strong>\x3c/td>
+      \x3ctd>$${p.min_ev?.toFixed(1) || '?'}–$${p.max_ev?.toFixed(0) || '?'}\x3c/td>
+      \x3ctd>\x3cdiv style="display:flex;align-items:center;gap:6px">\x3cdiv class="ev-bar ${evClass}" style="width:${Math.min(ratio, 120)*0.6}px">\x3c/div>\x3cstrong>${ratio}%\x3c/strong>\x3c/div>\x3c/td>
+      \x3ctd>${buyback}\x3c/td>
+      \x3ctd>${p.num_pulls_7d?.toLocaleString() || 0}\x3c/td>
+      \x3ctd>${lastPull}\x3c/td>
+    \x3c/tr>`;
   });
   document.getElementById('packBody').innerHTML = html;
 }
@@ -430,17 +432,17 @@ function renderRarities() {
       const r = rarities.find(rd => rd.name?.toLowerCase() === name.toLowerCase());
       return r ? r.weight + '%' : '—%';
     };
-    const label = p.repack ? `${p.name} <span style="color:#94a3b8">(${p.creator_profile?.username || 'creator'})</span>` : `${p.name} <span style="color:#94a3b8">(${p.category})</span>`;
+    const label = p.repack ? `${p.name} \x3cspan style="color:#94a3b8">(${p.creator_profile?.username || 'creator'})\x3c/span>` : `${p.name} \x3cspan style="color:#94a3b8">(${p.category})\x3c/span>`;
 
-    html += `<tr>
-      <td>${label}</td>
-      <td>$${Number(p.mint_price)}</td>
-      <td style="color:#94a3b8">${getWeight('Common')}</td>
-      <td style="color:#22c55e">${getWeight('Uncommon')}</td>
-      <td style="color:#3b82f6">${getWeight('Rare')}</td>
-      <td style="color:#a855f7">${getWeight('Epic')}</td>
-      <td style="color:#ef4444">${getWeight('Legendary') !== '—%' ? getWeight('Legendary') : getWeight('Mythic')}</td>
-    </tr>`;
+    html += `\x3ctr>
+      \x3ctd>${label}\x3c/td>
+      \x3ctd>$${Number(p.mint_price)}\x3c/td>
+      \x3ctd style="color:#94a3b8">${getWeight('Common')}\x3c/td>
+      \x3ctd style="color:#22c55e">${getWeight('Uncommon')}\x3c/td>
+      \x3ctd style="color:#3b82f6">${getWeight('Rare')}\x3c/td>
+      \x3ctd style="color:#a855f7">${getWeight('Epic')}\x3c/td>
+      \x3ctd style="color:#ef4444">${getWeight('Legendary') !== '—%' ? getWeight('Legendary') : getWeight('Mythic')}\x3c/td>
+    \x3c/tr>`;
   });
   document.getElementById('rarityBody').innerHTML = html;
 }
