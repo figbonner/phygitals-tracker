@@ -371,7 +371,7 @@ async function loadAll() {
       apiFetch('/api/marketplace/leaderboard/weekly?pageSize=50'),
       apiFetch('/api/marketplace/leaderboard?pageSize=50'),
       apiFetch('/api/marketplace/prize-data?week=' + getISOWeek()),
-      apiFetch('/api/marketplace/marketplace-listings?limit=30').catch(() => ({ listings: [] }))
+      apiFetch('/api/marketplace/sales?limit=50').catch(() => ({ sales: [] }))
     ]);
     setLoading(70);
 
@@ -379,7 +379,7 @@ async function loadAll() {
     weeklyLB = wLB.leaderboard || [];
     allTimeLB = aLB.leaderboard || [];
     prizes = prizeData.prizes || [];
-    marketplaceListings = listingsData.listings || listingsData || [];
+    marketplaceListings = listingsData.sales || [];
 
     renderAll();
 
@@ -494,61 +494,66 @@ function renderBestRips() {
 // ——— LIVE PULL FEED ——————————————————————————————————————————————————————————
 function renderPullFeed() {
   const container = document.getElementById('pullFeedScroll');
-
-  // Use marketplace listings as the pull feed source
-  let listings = Array.isArray(marketplaceListings) ? marketplaceListings : [];
-
-  if (!listings.length) {
-    // Fallback: synthesize from pack data (recent activity)
-    listings = allPacks
-      .filter(p => p.last_pull && p.in_stock)
-      .sort((a, b) => new Date(b.last_pull) - new Date(a.last_pull))
-      .slice(0, 20)
-      .map(p => ({
-        name: p.name,
-        price: p.mint_price,
-        rarity: 'mixed',
-        created_at: p.last_pull,
-        pack_name: p.name,
-        category: p.repack ? 'creator' : (p.category || 'other'),
-        value: p.ev
-      }));
+  const packById = {};
+  const packBySlug = {};
+  allPacks.forEach(p => {
+    if (p.id) packById[String(p.id)] = p.name;
+    if (p.slug) packBySlug[p.slug] = p.name;
+  });
+  function resolvePackName(clawId) {
+    if (!clawId) return 'Unknown Pack';
+    if (packById[String(clawId)]) return packById[String(clawId)];
+    for (const [slug, name] of Object.entries(packBySlug)) {
+      if (String(clawId).includes(slug) || slug.includes(String(clawId))) return name;
+    }
+    return String(clawId);
   }
-
-  if (!listings.length) {
+  let sales = Array.isArray(marketplaceListings) ? marketplaceListings : [];
+  if (!sales.length) {
     container.innerHTML = '<div class="pull-feed-empty">No recent activity data available</div>';
     return;
   }
-
-  // Sort by most recent
-  listings.sort((a, b) => new Date(b.created_at || b.listed_at || 0) - new Date(a.created_at || a.listed_at || 0));
-
+  sales.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
   let html = '';
-  listings.slice(0, 25).forEach(item => {
-    const rarityName = (item.rarity || item.rarity_name || 'common').toLowerCase();
-    const rarityClass = ['legendary','mythic'].includes(rarityName) ? 'rarity-legendary' :
-                        rarityName === 'epic' ? 'rarity-epic' :
-                        rarityName === 'rare' ? 'rarity-rare' :
-                        rarityName === 'uncommon' ? 'rarity-uncommon' : 'rarity-common';
-    const displayName = item.name || item.item_name || item.pack_name || 'Unknown Item';
-    const packName = item.pack_name || item.category || '';
-    const value = item.price || item.value || item.listing_price;
-    const valueStr = value ? fmt$(typeof value === 'number' && value > 10000 ? value / 1e6 : value) : '';
-    const timeStr = timeAgo(item.created_at || item.listed_at);
-    const seller = item.seller ? shortAddr(item.seller) : '';
-
-    html += `<div class="pull-item">
-      <div class="pull-rarity ${rarityClass}"></div>
-      <div class="pull-info">
-        <div class="pull-title">${displayName}</div>
-        <div class="pull-detail">${packName}${seller ? ' · ' + seller : ''}</div>
-      </div>
-      <div class="pull-value">${valueStr}</div>
-      <div class="pull-time">${timeStr}</div>
-    </div>`;
+  sales.slice(0, 30).forEach(item => {
+    const isClaw = item.type === 'CLAW';
+    const cardName = item.type === 'BUY' && item.nft && item.nft.name ? item.nft.name : null;
+    const packName = resolvePackName(item.clawId);
+    const displayName = cardName || packName;
+    const amount = item.amount ? item.amount / 1e6 : 0;
+    const timeStr = timeAgo(item.time);
+    const wallet = item.from ? shortAddr(item.from) : '';
+    let rarityClass = 'rarity-common';
+    if (cardName && item.nft) {
+      const val = item.nft.price ? item.nft.price / 1e6 : amount;
+      if (val >= 100) rarityClass = 'rarity-legendary';
+      else if (val >= 50) rarityClass = 'rarity-epic';
+      else if (val >= 20) rarityClass = 'rarity-rare';
+      else if (val >= 10) rarityClass = 'rarity-uncommon';
+    }
+    const typeIcon = isClaw ? '\u{1F9E4}' : '\u{1F6D2}';
+    const typeLabel = isClaw ? 'Pulled from ' + packName : (cardName ? 'Marketplace buy' : 'Bought');
+    html += '<div class="pull-item">';
+    html += '<div class="pull-rarity ' + rarityClass + '"></div>';
+    html += '<div class="pull-info">';
+    html += '<div class="pull-title">' + typeIcon + ' ' + displayName + '</div>';
+    html += '<div class="pull-detail">' + typeLabel + (wallet ? ' \u00b7 ' + wallet : '') + '</div>';
+    html += '</div>';
+    html += '<div class="pull-value">' + fmt$(amount) + '</div>';
+    html += '<div class="pull-time">' + timeStr + '</div>';
+    html += '</div>';
   });
   container.innerHTML = html;
 }
+
+// Auto-refresh feed every 30s
+setInterval(async () => {
+  try {
+    const d = await apiFetch('/api/marketplace/sales?limit=50').catch(() => ({sales:[]}));
+    marketplaceListings = d.sales || [];
+    renderPullFeed();
+  } catch(e) {}
+}, 30000);
 
 // ——— LEADERBOARD ———————————————————————————————————————————————————————————
 function showLB(view) {
