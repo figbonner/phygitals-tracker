@@ -2,7 +2,7 @@
 """
 Phygitals Tracker - dashboard.py
 Generates a self-contained HTML dashboard from the SQLite database.
-Run: python3 dashboard.py  → outputs dashboard.html
+Run: python3 dashboard.py  � outputs dashboard.html
 """
 
 import sqlite3
@@ -21,7 +21,7 @@ def q(conn, sql, params=()):
 def get_data(conn):
     d = {}
 
-    # Latest pack EVs — official packs
+    # Latest pack EVs  official packs
     d["packs"] = q(conn, """
         SELECT pack_name, category, mint_price, ev, min_ev, max_ev,
                ev_ratio, buyback_pct, num_pulls_7d, in_stock, last_pull,
@@ -32,7 +32,7 @@ def get_data(conn):
         ORDER BY ev_ratio DESC
     """)
 
-    # Latest pack EVs — creator/repack packs
+    # Latest pack EVs  creator/repack packs
     d["creator_packs"] = q(conn, """
         SELECT pack_name, category, mint_price, ev, min_ev, max_ev,
                ev_ratio, buyback_pct, num_pulls_7d, in_stock, last_pull,
@@ -120,16 +120,16 @@ def build_html(d):
     pack_rows = ""
     for p in d["packs"]:
         name, cat, price, ev, min_ev, max_ev, ratio, buyback, pulls7d, in_stock, last_pull = p
-        ratio_pct = f"{ratio*100:.1f}%" if ratio else "—"
+        ratio_pct = f"{ratio*100:.1f}%" if ratio else ""
         ratio_color = "#4ade80" if ratio and ratio >= 1.0 else "#f87171" if ratio and ratio < 0.85 else "#facc15"
-        stock_badge = '<span style="color:#4ade80">●</span>' if in_stock else '<span style="color:#f87171">●</span>'
+        stock_badge = '<span style="color:#4ade80">�</span>' if in_stock else '<span style="color:#f87171">�</span>'
         pack_rows += f"""
         <tr>
           <td>{stock_badge} {name}</td>
           <td style="text-transform:capitalize">{cat}</td>
           <td>${price:,.0f}</td>
           <td>${ev:.2f}</td>
-          <td>${min_ev:.2f} – ${max_ev:.2f}</td>
+          <td>${min_ev:.2f}  ${max_ev:.2f}</td>
           <td style="color:{ratio_color};font-weight:700">{ratio_pct}</td>
           <td>{buyback*100:.0f}%</td>
           <td>{int(pulls7d):,}</td>
@@ -141,7 +141,7 @@ def build_html(d):
         rank, uname, addr, vol, pulls, pts = row
         is_me = addr == MY_WALLET
         style = 'style="background:rgba(250,204,21,0.08);font-weight:700"' if is_me else ""
-        me_badge = " 👈" if is_me else ""
+        me_badge = " =H" if is_me else ""
         uname_display = (uname or addr[:8]+"...") + me_badge
         lb_rows += f"""
         <tr {style}>
@@ -158,7 +158,7 @@ def build_html(d):
         rank, uname, addr, vol, pulls, pts = row
         is_me = addr == MY_WALLET
         style = 'style="background:rgba(250,204,21,0.08);font-weight:700"' if is_me else ""
-        me_badge = " 👈" if is_me else ""
+        me_badge = " =H" if is_me else ""
         uname_display = (uname or addr[:8]+"...") + me_badge
         at_rows += f"""
         <tr {style}>
@@ -226,7 +226,7 @@ def build_html(d):
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Phygitals Tracker — Figbonner</title>
+<title>Phygitals Tracker  Figbonner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   * {{ box-sizing: border-box; margin:0; padding:0; }}
@@ -259,8 +259,8 @@ def build_html(d):
 <body>
 <header>
   <div>
-    <h1>⚡ Phygitals Tracker</h1>
-    <div class="sub">Figbonner · {MY_WALLET[:12]}... · Generated {generated}</div>
+    <h1>� Phygitals Tracker</h1>
+    <div class="sub">Figbonner � {MY_WALLET[:12]}... � Generated {generated}</div>
   </div>
 </header>
 
@@ -270,7 +270,7 @@ def build_html(d):
   <div class="stat-card"><div class="stat-val">{my_weekly_vol}</div><div class="stat-label">Weekly Volume</div></div>
   <div class="stat-card"><div class="stat-val">{my_weekly_pts}</div><div class="stat-label">Weekly Points</div></div>
   <div class="stat-card"><div class="stat-val">#{my_at_rank}</div><div class="stat-label">All-Time Rank</div></div>
-  <div class="stat-card"><div class="stat-val" style="color:#f87171">{gap_to_next}</div><div class="stat-label">Gap to Next Rank ↑</div></div>
+  <div class="stat-card"><div class="stat-val" style="color:#f87171">{gap_to_next}</div><div class="stat-label">Gap to Next Rank �</div></div>
   {stats_row}
 </div>
 
@@ -397,4 +397,4 @@ if __name__ == "__main__":
     html = build_html(data)
     with open("dashboard.html", "w") as f:
         f.write(html)
-    print("✅ dashboard.html generated")
+    print(" dashboard.html generated")
