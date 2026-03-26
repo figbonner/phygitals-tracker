@@ -376,7 +376,6 @@ async function loadAll() {
     document.getElementById('tsBadge').textContent = 'Live · ' + ts;
     document.getElementById('tsBadge').className = 'ts-badge live';
     document.getElementById('dataMode').textContent = 'Live data · auto-refreshes on load';
-    document.getElementById('weekLabel').textContent = 'Week ' + getISOWeek().split('-')[1];
     setLoading(100);
     setTimeout(() => setLoading(0), 500);
   } catch(e) {
