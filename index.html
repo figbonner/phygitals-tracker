@@ -513,6 +513,7 @@ function renderPullFeed() {
 }
 
 // Auto-refresh feed every 30s
+// Auto-refresh: feed every 30s, full data every 2 minutes
 setInterval(async () => {
   try {
     const d = await apiFetch('/api/marketplace/sales?limit=50').catch(() => ({sales:[]}));
@@ -520,6 +521,8 @@ setInterval(async () => {
     renderPullFeed();
   } catch(e) {}
 }, 30000);
+
+setInterval(() => { loadAll(); }, 120000);
 
 // ——— LEADERBOARD ———————————————————————————————————————————————————————————
 function showLB(view) {
