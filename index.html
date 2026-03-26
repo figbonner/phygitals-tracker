@@ -24,17 +24,7 @@ h1{font-size:1.8rem;margin-bottom:4px}
 .hero .card:nth-child(6) .value{color:#22c55e}
 /* Section headers */
 .section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
-/* Gap visualizer */
-.gap-viz{display:flex;align-items:center;justify-content:center;gap:20px;background:#1e293b;border-radius:12px;padding:20px;margin-bottom:24px;flex-wrap:wrap}
-.gap-viz .player{text-align:center}
-.gap-viz .player.me{border:2px solid #f59e0b;border-radius:10px;padding:10px 20px}
-.gap-viz .player .name{font-weight:700;font-size:.95rem}
-.gap-viz .player .vol{font-size:.8rem;color:#94a3b8}
-.gap-viz .gap-info{text-align:center}
-.gap-info .amount{font-size:1.5rem;font-weight:700}
-.gap-info .label{font-size:.7rem;color:#94a3b8}
-.gap-up{color:#ef4444}
-.gap-down{color:#22c55e}
+
 
 /* ===== BEST RIP NOW RECOMMENDER ===== */
 .best-rip{background:linear-gradient(135deg,#1e293b 0%,#1a2332 100%);border:2px solid #f59e0b;border-radius:14px;padding:20px;margin-bottom:24px;position:relative;overflow:hidden}
@@ -169,8 +159,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 </div>
 
 <!-- Gap Visualizer -->
-<div class="section-header">🏆 Prize Position — <span id="weekLabel">Week</span></div>
-<div class="gap-viz" id="gapViz"></div>
+
 
 <!-- BEST RIP NOW RECOMMENDER (NEW) -->
 <div class="section-header">🔥 Best Rip Now — Algorithmic Recommendation</div>
@@ -402,7 +391,6 @@ async function loadAll() {
 // ——— RENDER ALL ——————————————————————————————————————————————————————————————
 function renderAll() {
   renderHero();
-  renderGapViz();
   renderBestRips();
   renderPullFeed();
   renderLeaderboard();
@@ -436,28 +424,6 @@ function renderHero() {
 }
 
 // ——— GAP VISUALIZER ——————————————————————————————————————————————————————————
-function renderGapViz() {
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  if (myIdx === -1) return;
-  const me = weeklyLB[myIdx];
-  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-  const below = myIdx < weeklyLB.length-1 ? weeklyLB[myIdx+1] : null;
-  const rank = myIdx + 1;
-
-  let html = '';
-  if (above) {
-    const gapUp = (above.volume - me.volume) / 1e6;
-    html += `<div class="player"><div class="name">${shortAddr(above.address)}</div><div class="vol">${fmt$(above.volume/1e6)} · #${rank-1}</div></div>`;
-    html += `<div class="gap-info gap-up"><div class="amount">↑ ${fmt$(gapUp)} gap</div><div class="label">volume needed to reach #${rank-1}</div></div>`;
-  }
-  html += `<div class="player me"><div class="name">${shortAddr(MY_WALLET)} 🎮</div><div class="vol">${fmt$(me.volume/1e6)} · #${rank}</div></div>`;
-  if (below) {
-    const gapDown = (me.volume - below.volume) / 1e6;
-    html += `<div class="gap-info gap-down"><div class="amount">↓ ${fmt$(gapDown)} lead</div><div class="label">buffer above #${rank+1}</div></div>`;
-    html += `<div class="player"><div class="name">${shortAddr(below.address)}</div><div class="vol">${fmt$(below.volume/1e6)} · #${rank+1}</div></div>`;
-  }
-  document.getElementById('gapViz').innerHTML = html;
-}
 
 // ——— BEST RIP NOW RECOMMENDER ————————————————————————————————————————————————
 function renderBestRips() {
