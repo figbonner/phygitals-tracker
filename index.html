@@ -139,6 +139,25 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   .hero{grid-template-columns:repeat(2,1fr)}
   .prize-grid{grid-template-columns:repeat(2,1fr)}
 }
+
+/* ===== DROUGHT PROBABILITY TRACKER ===== */
+.drought-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
+.drought-table{width:100%;font-size:.8rem;border-collapse:collapse}
+.drought-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;letter-spacing:1px;position:sticky;top:0;background:#1e293b;z-index:2}
+.drought-table td{padding:8px;border-top:1px solid #1a2332}
+.drought-meter{height:8px;border-radius:4px;background:#1a2332;overflow:hidden;min-width:80px}
+.drought-meter .fill{height:100%;border-radius:4px;transition:width .3s}
+.drought-cool{background:linear-gradient(90deg,#3b82f6,#22c55e)}
+.drought-warm{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.drought-hot{background:linear-gradient(90deg,#ef4444,#dc2626);animation:pulse-bar 1.5s infinite}
+@keyframes pulse-bar{0%,100%{opacity:1}50%{opacity:.7}}
+.drought-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600}
+.drought-overdue{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
+.drought-due{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
+.drought-normal{background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644}
+.drought-hot-tag{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
+.drought-val{font-weight:700;font-size:.85rem}
+.drought-sub{font-size:.65rem;color:#64748b;margin-top:1px}
 </style>
 </head>
 <body>
@@ -203,6 +222,16 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 </div>
 
 <!-- Pack EV Dashboard with Variance/Risk -->
+
+<!-- Drought Probability Tracker -->
+<div class="section-header">🎰 Mythic Drought Tracker — Which Machines Are Due?</div>
+<div class="drought-wrap">
+  <table class="drought-table">
+    <thead><tr><th>Pack</th><th>Category</th><th>Price</th><th>7D Pulls</th><th>Top Rarity</th><th>Odds</th><th>Expected Hits</th><th>Drought Meter</th><th>Status</th><th>Mythic Value</th></tr></thead>
+    <tbody id="droughtBody"></tbody>
+  </table>
+</div>
+
 <div class="section-header">🎰 Pack EV Dashboard — Sorted by EV/Price Ratio</div>
 <div class="pack-table-wrap">
   <div class="pack-filters" id="packFilters"></div>
@@ -388,9 +417,98 @@ async function loadAll() {
 }
 
 // ——— RENDER ALL ——————————————————————————————————————————————————————————————
+// --- DROUGHT PROBABILITY TRACKER ---
+function renderDrought() {
+  let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
+  
+  // For each pack, find the top rarity (mythic or legendary)
+  const rows = packs.map(p => {
+    const rd = p.rarity_distribution || [];
+    const mythic = rd.find(r => r.name === 'Mythic');
+    const legendary = rd.find(r => r.name === 'Legendary');
+    const topRarity = mythic || legendary;
+    if (!topRarity) return null;
+    
+    const pulls7d = p.num_pulls_7d || 0;
+    const odds = topRarity.weight / 100; // e.g. 0.01 for 1%
+    if (odds <= 0) return null;
+    
+    // Expected number of hits in 7d pulls
+    const expectedHits = pulls7d * odds;
+    
+    // Probability of at least 1 hit: 1 - (1 - odds)^pulls
+    const probAtLeastOne = 1 - Math.pow(1 - odds, pulls7d);
+    
+    // Drought score: how many "expected cycles" without guaranteed hit
+    // If expectedHits < 1, machine is in drought territory
+    const droughtRatio = expectedHits; // <1 = overdue, >1 = likely hit
+    
+    // Average pulls per hit
+    const avgPullsPerHit = 1 / odds;
+    
+    return {
+      pack: p,
+      topRarity,
+      pulls7d,
+      odds,
+      expectedHits,
+      probAtLeastOne,
+      droughtRatio,
+      avgPullsPerHit,
+      minVal: topRarity.lower || 0,
+      maxVal: topRarity.upper || 0
+    };
+  }).filter(Boolean);
+  
+  // Sort by drought ratio ascending (most overdue first)
+  rows.sort((a, b) => a.droughtRatio - b.droughtRatio);
+  
+  let html = '';
+  rows.forEach(r => {
+    const p = r.pack;
+    const price = Number(p.mint_price);
+    const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-').toLowerCase();
+    const catLabel = p.repack ? 'Creator' : (p.category || 'Other');
+    
+    // Drought meter: fill based on probability
+    const pct = Math.min(r.probAtLeastOne * 100, 100);
+    let meterClass = 'drought-cool';
+    if (pct >= 95) meterClass = 'drought-hot';
+    else if (pct >= 70) meterClass = 'drought-warm';
+    
+    // Status badge
+    let statusHTML = '';
+    if (r.expectedHits >= 3) {
+      statusHTML = '<span class="drought-badge drought-hot-tag">\uD83D\uDD25 ' + r.expectedHits.toFixed(1) + 'x overdue</span>';
+    } else if (r.expectedHits >= 1.5) {
+      statusHTML = '<span class="drought-badge drought-overdue">\u26A0\uFE0F Overdue</span>';
+    } else if (r.expectedHits >= 0.7) {
+      statusHTML = '<span class="drought-badge drought-due">\u23F3 Getting due</span>';
+    } else {
+      statusHTML = '<span class="drought-badge drought-normal">\u2744\uFE0F Cold</span>';
+    }
+    
+    html += '<tr>';
+    html += '<td><strong>' + p.name + '</strong></td>';
+    html += '<td><span class="cat-badge ' + catClass + '">' + catLabel + '</span></td>';
+    html += '<td>$' + price + '</td>';
+    html += '<td>' + r.pulls7d.toLocaleString() + '</td>';
+    html += '<td style="color:' + (r.topRarity.color || '#f59e0b') + '">' + r.topRarity.name + '</td>';
+    html += '<td>' + r.topRarity.weight + '% <span class="drought-sub">(1 in ' + Math.round(r.avgPullsPerHit) + ')</span></td>';
+    html += '<td><div class="drought-val">' + r.expectedHits.toFixed(1) + '</div><div class="drought-sub">' + (r.probAtLeastOne * 100).toFixed(1) + '% chance hit</div></td>';
+    html += '<td><div class="drought-meter"><div class="fill ' + meterClass + '" style="width:' + pct + '%"></div></div></td>';
+    html += '<td>' + statusHTML + '</td>';
+    html += '<td>$' + r.minVal.toLocaleString() + '\u2013$' + r.maxVal.toLocaleString() + '</td>';
+    html += '</tr>';
+  });
+  
+  document.getElementById('droughtBody').innerHTML = html;
+}
+
 function renderAll() {
   renderHero();
   renderBestRips();
+  renderDrought();
   renderPullFeed();
   renderLeaderboard();
   renderPrizes();
