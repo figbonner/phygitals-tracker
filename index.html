@@ -439,20 +439,23 @@ function calcMarketTrends() {
   arbListings.forEach(item => {
     const catMeta = Array.isArray(item.metadata) ? item.metadata.find(m => (m.trait_type || m.key) === 'Category') : null;
     const cat = catMeta ? catMeta.value : 'Unknown';
-    if (!cats[cat]) cats[cat] = { listed: 0, totalFmv: 0, totalPrice: 0, fmvCount: 0, belowFmv: 0 };
+    if (!cats[cat]) cats[cat] = { listed: 0, ratios: [], belowFmv: 0 };
     const c = cats[cat]; c.listed++;
     const fmv = parseFloat(item.altFmv || 0);
     const price = (item.price || 0) / 1e6;
-    if (fmv > 0 && price > 0) { c.totalFmv += fmv; c.totalPrice += price; c.fmvCount++; if (price < fmv) c.belowFmv++; }
+    if (fmv > 0 && price > 0) { c.ratios.push(price / fmv); if (price < fmv) c.belowFmv++; }
   });
   marketTrends = {};
   Object.entries(cats).forEach(([cat, c]) => {
+    c.ratios.sort((a, b) => a - b);
+    const median = c.ratios.length > 0 ? c.ratios[Math.floor(c.ratios.length / 2)] : 0.85;
+    // Cap ratio between 0.5 and 1.2 to filter extreme outliers
+    const cappedMedian = Math.max(0.5, Math.min(1.2, median));
     marketTrends[cat.toLowerCase()] = {
       listedCount: c.listed,
-      avgDiscount: c.fmvCount > 0 ? (1 - c.totalPrice / c.totalFmv) * 100 : 0,
-      sellThrough: c.fmvCount > 0 ? c.belowFmv / c.fmvCount : 0,
+      sellThrough: c.ratios.length > 0 ? c.belowFmv / c.ratios.length : 0,
       liquidity: Math.min(c.listed / 50, 1),
-      realFmvRatio: c.fmvCount > 0 ? c.totalPrice / c.totalFmv : 0.85
+      realFmvRatio: cappedMedian
     };
   });
 }
