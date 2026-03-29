@@ -169,10 +169,11 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 .heatmap-legend .swatch{width:14px;height:14px;border-radius:3px;display:inline-block;vertical-align:middle}
 
 /* ===== ARBITRAGE SECTION ===== */
-.arb-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
+.arb-wrap{background:linear-gradient(135deg,#1e293b 0%,#1a2a1e 100%);border:1px solid #22c55e33;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
 .arb-table{width:100%;font-size:.8rem;border-collapse:collapse}
-.arb-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem}
-.arb-table td{padding:8px;border-top:1px solid #1a2332}
+.arb-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;border-bottom:1px solid #334155}
+.arb-table td{padding:8px 8px;border-top:1px solid #1a2332}
+.arb-table tr:hover{background:rgba(34,197,94,.05)}
 .arb-profit{color:#22c55e;font-weight:700}
 .arb-loss{color:#ef4444;font-weight:700}
 
@@ -311,12 +312,24 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   </table>
 </div>
 
-<!-- Alt FMV Arbitrage Detector (NEW v2) -->
-<div class="section-header">&#128176; Alt FMV Arbitrage &#8212; Cards Undervalued vs External Sources</div>
+<!-- Enhanced Marketplace Arbitrage Tracker (v3) -->
+<div class="section-header">&#128176; Marketplace Arbitrage Feed &#8212; Best Value Cards Listed Now</div>
 <div class="arb-wrap">
-  <div style="margin-bottom:10px;font-size:.75rem;color:#94a3b8">Comparing Phygitals FMV vs eBay/external FMV &#8212; positive spread = potential buy opportunity</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:.75rem;color:#94a3b8">Listed cards priced <strong style="color:#22c55e">30%+ below</strong> Card Ladder / eBay comps &#8212; sorted by discount</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:.7rem;color:#64748b">Min discount:</label>
+      <select id="arbThreshold" onchange="arbMinDiscount=Number(this.value);renderArbitrage()" style="background:#0f1523;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:2px 6px;font-size:.75rem">
+        <option value="20">20%</option>
+        <option value="30" selected>30%</option>
+        <option value="40">40%</option>
+        <option value="50">50%</option>
+      </select>
+      <span id="arbCount" style="font-size:.7rem;color:#f59e0b;font-weight:600"></span>
+    </div>
+  </div>
   <table class="arb-table">
-    <thead><tr><th>Card</th><th>Rarity</th><th>Phygitals FMV</th><th>Alt FMV</th><th>Source</th><th>Spread</th><th>eBay ID</th></tr></thead>
+    <thead><tr><th>Card Name</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
     <tbody id="arbBody"></tbody>
   </table>
 </div>
@@ -333,19 +346,21 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 <button class="refresh-btn" onclick="loadAll()" title="Refresh data">&#8635;</button>
 
 <script>
-// ——— CONFIG ———————————————————————————————————————————————————————————————————
+// âââ CONFIG âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const MY_WALLET = '9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVXvFWEi66R7872kr1';
 const API_BASE  = 'https://api.phygitals.com';
 const PROXY     = 'https://corsproxy.io/?';
 
-// ——— STATE ————————————————————————————————————————————————————————————————————
+// âââ STATE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 let allPacks = [], weeklyLB = [], allTimeLB = [], prizes = [], marketplaceListings = [];
 let deepSalesData = [];  // v2: collected from deep pagination
+let arbListings = [];     // v3: marketplace listings with altFmv for arbitrage
 let mythicHits = {};
 let currentLBView = 'weekly';
 let currentFilter = 'all';
+let arbMinDiscount = 30;  // minimum % discount threshold for arbitrage feed
 
-// ——— API FETCH ————————————————————————————————————————————————————————————————
+// âââ API FETCH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function apiFetch(path) {
   try {
     const r = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
@@ -360,7 +375,7 @@ function setLoading(pct) {
   document.getElementById('loadingFill').style.width = pct + '%';
 }
 
-// ——— HELPERS ——————————————————————————————————————————————————————————————————
+// âââ HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 const fmt$ = (v) => '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 const fmtK = (v) => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
 const shortAddr = (a) => a ? a.substring(0,6) + '...' + a.substring(a.length-4) : '???';
@@ -394,7 +409,7 @@ function calcTrueOdds(pack, rarityName) {
   return tier ? tier.weight / totalWeight : 0;
 }
 
-// ——— VARIANCE / RISK SCORE CALCULATOR ————————————————————————————————————————
+// âââ VARIANCE / RISK SCORE CALCULATOR ââââââââââââââââââââââââââââââââââââââââ
 function calcVariance(pack) {
   const rarities = pack.rarity_distribution || [];
   if (rarities.length === 0) return { score: 0, label: 'Unknown', class: 'risk-moderate' };
@@ -413,7 +428,7 @@ function calcVariance(pack) {
   return { score: volatility, label: 'Volatile', class: 'risk-volatile', icon: '\uD83C\uDFB2' };
 }
 
-// ——— BEST RIP NOW ALGORITHM ——————————————————————————————————————————————————
+// âââ BEST RIP NOW ALGORITHM ââââââââââââââââââââââââââââââââââââââââââââââââââ
 function calcBestRips() {
   if (!allPacks.length) return [];
 
@@ -455,7 +470,7 @@ function calcBestRips() {
     .slice(0, 3);
 }
 
-// ——— DEEP SALES SCANNER (v2) ————————————————————————————————————————————————
+// âââ DEEP SALES SCANNER (v2) ââââââââââââââââââââââââââââââââââââââââââââââââ
 async function scanDeepSales(maxPages) {
   maxPages = maxPages || 20;
   const packById = {};
@@ -502,7 +517,7 @@ async function scanDeepSales(maxPages) {
   return allSales;
 }
 
-// ——— LOAD ALL DATA ———————————————————————————————————————————————————————————
+// âââ LOAD ALL DATA âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function loadAll() {
   const btn = document.querySelector('.refresh-btn');
   btn.classList.add('spinning');
@@ -527,6 +542,19 @@ async function loadAll() {
 
     // v2: deep scan for mythics (20 pages = 200 sales)
     await scanDeepSales(20);
+    setLoading(70);
+
+    // v3: fetch marketplace listings for arbitrage (multiple pages, recently-listed gets altFmv)
+    arbListings = [];
+    try {
+      for (let pg = 0; pg < 10; pg++) {
+        const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=200&page=' + pg + '&metadataConditions=%7B%7D&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
+        const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
+        if (!items.length) break;
+        arbListings.push(...items);
+        if (items.length < 200) break;
+      }
+    } catch(e) { console.warn('Arb listings fetch error:', e); }
     setLoading(80);
 
     renderAll();
@@ -534,7 +562,7 @@ async function loadAll() {
     const ts = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
     document.getElementById('tsBadge').textContent = 'Live \u00B7 ' + ts;
     document.getElementById('tsBadge').className = 'ts-badge live';
-    document.getElementById('dataMode').textContent = 'Live data \u00B7 200-player leaderboard \u00B7 deep sales scan \u00B7 auto-refreshes';
+    document.getElementById('dataMode').textContent = 'Live data \u00B7 200-player leaderboard \u00B7 deep sales scan \u00B7 marketplace arbitrage \u00B7 auto-refreshes';
     setLoading(100);
     setTimeout(() => setLoading(0), 500);
   } catch(e) {
@@ -546,7 +574,7 @@ async function loadAll() {
   btn.classList.remove('spinning');
 }
 
-// ——— RENDER ALL ——————————————————————————————————————————————————————————————
+// âââ RENDER ALL ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderAll() {
   renderHero();
   renderBestRips();
@@ -562,7 +590,7 @@ function renderAll() {
   renderRarities();
 }
 
-// ——— HERO STATS ——————————————————————————————————————————————————————————————
+// âââ HERO STATS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderHero() {
   const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
   if (myIdx === -1) return;
@@ -586,7 +614,7 @@ function renderHero() {
   document.getElementById('hGapDownSub').textContent = below ? 'buffer above #' + (rank+1) : '';
 }
 
-// ——— BEST RIP NOW RECOMMENDER ————————————————————————————————————————————————
+// âââ BEST RIP NOW RECOMMENDER ââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderBestRips() {
   const best = calcBestRips();
   if (!best.length) {
@@ -618,7 +646,7 @@ function renderBestRips() {
   document.getElementById('bestRipCards').innerHTML = html;
 }
 
-// ——— LIVE PULL FEED ——————————————————————————————————————————————————————————
+// âââ LIVE PULL FEED ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderPullFeed() {
   const container = document.getElementById('pullFeedScroll');
   const packById = {};
@@ -686,7 +714,7 @@ setInterval(async () => {
 }, 30000);
 setInterval(() => { loadAll(); }, 120000);
 
-// ——— DROUGHT TRACKER (v2: TRUE ODDS using total weight sum) ————————————————
+// âââ DROUGHT TRACKER (v2: TRUE ODDS using total weight sum) ââââââââââââââââ
 function renderDrought() {
   let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
   const rows = packs.map(p => {
@@ -750,7 +778,7 @@ function renderDrought() {
   }).join('');
 }
 
-// ——— MYTHIC TIMING HEATMAP (v2 NEW) —————————————————————————————————————————
+// âââ MYTHIC TIMING HEATMAP (v2 NEW) âââââââââââââââââââââââââââââââââââââââââ
 function renderMythicHeatmap() {
   // Build hour/day grid from deep sales data
   const grid = Array.from({length: 7}, () => Array(24).fill(0));
@@ -815,7 +843,7 @@ function renderMythicHeatmap() {
   document.getElementById('heatmapTotal').textContent = mythicCount + ' mythic/legendary pulls detected from ' + deepSalesData.length + ' scanned sales';
 }
 
-// ——— WHALE MOVEMENT TRACKER (v2 NEW) ————————————————————————————————————————
+// âââ WHALE MOVEMENT TRACKER (v2 NEW) ââââââââââââââââââââââââââââââââââââââââ
 function renderWhaleTracker() {
   const body = document.getElementById('whaleBody');
   if (!body) return;
@@ -863,7 +891,7 @@ function renderWhaleTracker() {
   }).join('');
 }
 
-// ——— EV FRESHNESS MONITOR (v2 NEW) ——————————————————————————————————————————
+// âââ EV FRESHNESS MONITOR (v2 NEW) ââââââââââââââââââââââââââââââââââââââââââ
 function renderEVFreshness() {
   const body = document.getElementById('evFreshnessBody');
   if (!body) return;
@@ -912,81 +940,110 @@ function renderEVFreshness() {
   }).join('');
 }
 
-// ——— ALT FMV ARBITRAGE DETECTOR (v2 NEW) ————————————————————————————————————
+// âââ MARKETPLACE ARBITRAGE FEED (v3 ENHANCED) ââââââââââââââââââââââââââââââââ
 function renderArbitrage() {
   const body = document.getElementById('arbBody');
   if (!body) return;
 
-  // Look through sales data for items with altFmv different from fmv
+  // Build arbitrage opportunities from live marketplace listings
   let arbItems = [];
+
+  // Primary source: live marketplace listings with altFmv (Card Ladder / eBay comps)
+  arbListings.forEach(item => {
+    const altFmv = Number(item.altFmv || 0);
+    const priceRaw = Number(item.price || 0);
+    const priceUsd = priceRaw / 1e6;  // prices stored in micro-USD
+    if (!altFmv || altFmv <= 0 || !priceUsd || priceUsd <= 0.5 || priceUsd > 50000) return;
+    if (!item.listed) return;
+
+    const discount = ((altFmv - priceUsd) / altFmv * 100);
+    if (discount < arbMinDiscount) return;
+
+    const lastSaleUsd = Number(item.lastSale || 0) / 1e6;
+    const sourceUrl = item.altFmvSource || '';
+    const isAlt = sourceUrl.includes('alt.xyz');
+    const isEbay = sourceUrl.includes('ebay');
+    const sourceName = isAlt ? 'Card Ladder' : isEbay ? 'eBay' : (sourceUrl ? 'External' : '\u2014');
+
+    arbItems.push({
+      name: item.name || 'Unknown',
+      listPrice: priceUsd,
+      compPrice: altFmv,
+      discount: discount,
+      savings: altFmv - priceUsd,
+      lastSale: lastSaleUsd,
+      sourceName: sourceName,
+      sourceUrl: sourceUrl,
+      slug: item.slug || '',
+      address: item.address || ''
+    });
+  });
+
+  // Fallback: also check deep sales data for cards with altFmv vs fmv spreads
   deepSalesData.forEach(s => {
     const nft = s.nft || {};
     const fmv = parseFloat(nft.fmv || 0);
     const altFmv = parseFloat(nft.altFmv || 0);
-    if (!fmv || !altFmv || fmv === altFmv) return;
+    if (!fmv || !altFmv || fmv <= 0 || altFmv <= 0) return;
+    const discount = ((altFmv - fmv) / altFmv * 100);
+    if (discount < arbMinDiscount) return;
 
-    const spread = ((altFmv - fmv) / fmv * 100);
+    const sourceUrl = nft.altFmvSource || '';
+    const isAlt = sourceUrl.includes('alt.xyz');
     arbItems.push({
       name: nft.name || s.name || 'Unknown',
-      rarity: nft.rarity || '',
-      fmv: fmv,
-      altFmv: altFmv,
-      altFmvSource: nft.altFmvSource || 'External',
-      spread: spread,
-      ebayId: nft.ebayListingId || s.ebayListingId || '',
-      fmvOverride: nft.fmv_override || 0
+      listPrice: fmv,
+      compPrice: altFmv,
+      discount: discount,
+      savings: altFmv - fmv,
+      lastSale: 0,
+      sourceName: isAlt ? 'Card Ladder' : 'External',
+      sourceUrl: sourceUrl,
+      slug: '',
+      address: nft.universalNFTDataAddress || ''
     });
   });
 
-  // Also check current marketplace sales
-  marketplaceListings.forEach(s => {
-    const nft = s.nft || {};
-    const fmv = parseFloat(nft.fmv || 0);
-    const altFmv = parseFloat(nft.altFmv || 0);
-    if (!fmv || !altFmv || fmv === altFmv) return;
-    const spread = ((altFmv - fmv) / fmv * 100);
-    arbItems.push({
-      name: nft.name || s.name || 'Unknown',
-      rarity: nft.rarity || '',
-      fmv: fmv,
-      altFmv: altFmv,
-      altFmvSource: nft.altFmvSource || 'External',
-      spread: spread,
-      ebayId: nft.ebayListingId || '',
-      fmvOverride: nft.fmv_override || 0
-    });
+  // Dedupe by name, keep best discount per card
+  const bestByName = {};
+  arbItems.forEach(a => {
+    if (!bestByName[a.name] || a.discount > bestByName[a.name].discount) {
+      bestByName[a.name] = a;
+    }
   });
+  arbItems = Object.values(bestByName).sort((a, b) => b.discount - a.discount);
 
-  // Dedupe by name and sort by spread (best opportunities first)
-  const seen = new Set();
-  arbItems = arbItems.filter(a => {
-    if (seen.has(a.name)) return false;
-    seen.add(a.name);
-    return true;
-  });
-  arbItems.sort((a, b) => b.spread - a.spread);
+  // Update count badge
+  const countEl = document.getElementById('arbCount');
+  if (countEl) countEl.textContent = arbItems.length + ' opportunities';
 
   if (!arbItems.length) {
-    body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b;padding:20px">No arbitrage opportunities detected in current data. Run deep sales scraper for more coverage.</td></tr>';
+    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:20px">No cards found at ' + arbMinDiscount + '%+ discount. Try lowering the threshold or wait for new listings.</td></tr>';
     return;
   }
 
-  body.innerHTML = arbItems.slice(0, 30).map(a => {
-    const spreadClass = a.spread > 0 ? 'arb-profit' : 'arb-loss';
-    const spreadStr = (a.spread > 0 ? '+' : '') + a.spread.toFixed(1) + '%';
+  body.innerHTML = arbItems.slice(0, 50).map(a => {
+    // Discount color intensity based on how deep the discount is
+    const discColor = a.discount >= 50 ? '#22c55e' : a.discount >= 40 ? '#4ade80' : '#86efac';
+    const discBg = a.discount >= 50 ? 'rgba(34,197,94,.15)' : a.discount >= 40 ? 'rgba(74,222,128,.1)' : 'rgba(134,239,172,.07)';
+    const cardLink = a.slug ? 'https://phygitals.com/marketplace/' + a.slug : '';
+    const sourceLink = a.sourceUrl ? '<a href="' + a.sourceUrl + '" target="_blank" style="color:#3b82f6;text-decoration:none;font-size:.7rem">' + a.sourceName + ' \u2197</a>' : '<span style="font-size:.7rem;color:#64748b">' + a.sourceName + '</span>';
+    const cardLinkHtml = cardLink ? '<a href="' + cardLink + '" target="_blank" style="color:#f59e0b;text-decoration:none;font-size:.7rem">Buy \u2197</a>' : '<span style="color:#64748b;font-size:.7rem">\u2014</span>';
+
     return '<tr>' +
-      '<td style="font-weight:600">' + (a.name.length > 40 ? a.name.substring(0,38) + '...' : a.name) + '</td>' +
-      '<td>' + a.rarity + '</td>' +
-      '<td>' + fmt$(a.fmv) + '</td>' +
-      '<td>' + fmt$(a.altFmv) + '</td>' +
-      '<td style="font-size:.75rem">' + a.altFmvSource + '</td>' +
-      '<td class="' + spreadClass + '">' + spreadStr + '</td>' +
-      '<td style="font-size:.7rem;color:#64748b">' + (a.ebayId || '\u2014') + '</td>' +
+      '<td style="font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + a.name + '">' + (a.name.length > 45 ? a.name.substring(0,43) + '...' : a.name) + '</td>' +
+      '<td style="color:#e2e8f0;font-weight:700">' + fmt$(a.listPrice) + '</td>' +
+      '<td style="color:#94a3b8">' + fmt$(a.compPrice) + '</td>' +
+      '<td style="background:' + discBg + ';color:' + discColor + ';font-weight:700;text-align:center;border-radius:4px">' + a.discount.toFixed(1) + '% off</td>' +
+      '<td style="color:#22c55e;font-weight:600">' + fmt$(a.savings) + '</td>' +
+      '<td style="color:#64748b;font-size:.8rem">' + (a.lastSale > 0 ? fmt$(a.lastSale) : '\u2014') + '</td>' +
+      '<td>' + sourceLink + '</td>' +
+      '<td>' + cardLinkHtml + '</td>' +
     '</tr>';
   }).join('');
 }
 
-// ——— LEADERBOARD ———————————————————————————————————————————————————————————
+// âââ LEADERBOARD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function showLB(view) {
   currentLBView = view;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1014,7 +1071,7 @@ function renderLeaderboard() {
   document.getElementById('lbBody').innerHTML = html;
 }
 
-// ——— PRIZES ————————————————————————————————————————————————————————————————
+// âââ PRIZES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderPrizes() {
   const colors = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
   let html = '';
@@ -1040,7 +1097,7 @@ function renderPrizes() {
   }
 }
 
-// ——— PACK EV TABLE ————————————————————————————————————————————————————————
+// âââ PACK EV TABLE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 function renderPackFilters() {
   const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : (p.category || 'other')))];
   let html = '';
@@ -1087,7 +1144,7 @@ function renderPacks() {
       '<td><strong>$' + (p.ev?.toFixed(2) || '\u2014') + '</strong></td>' +
       '<td>$' + (p.min_ev?.toFixed(1) || '?') + '\u2013$' + (p.max_ev?.toFixed(0) || '?') + '</td>' +
       '<td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ' + evClass + '" style="width:' + Math.min(ratio, 120)*0.6 + 'px"></div><strong>' + ratio + '%</strong></div></td>' +
-      '<td ><span class="risk-badge ' + risk.class + '">' + risk.icon + ' ' + risk.label + '</span></td>' +
+      '<td><span class="risk-badge ' + risk.class + '">' + risk.icon + ' ' + risk.label + '</span></td>' +
       '<td>' + buyback + '</td>' +
       '<td>' + (p.num_pulls_7d || 0).toLocaleString() + '</td>' +
       '<td>' + lastPull + '</td>' +
@@ -1096,7 +1153,7 @@ function renderPacks() {
   document.getElementById('packBody').innerHTML = html;
 }
 
-// ——— RARITY TABLE (v2: with TRUE ODDS column) ———————————————————————————————
+// âââ RARITY TABLE (v2: with TRUE ODDS column) âââââââââââââââââââââââââââââââ
 function renderRarities() {
   let packs = [...allPacks];
   if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
@@ -1147,7 +1204,7 @@ function renderRarities() {
   document.getElementById('rarityBody').innerHTML = html;
 }
 
-// ——— INIT ————————————————————————————————————————————————————————————————————
+// âââ INIT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 loadAll();
 </script>
 </body>
