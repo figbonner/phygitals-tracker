@@ -243,7 +243,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
     </div>
   </div>
   <table class="arb-table">
-    <thead><tr><th>Card Name</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
+    <thead><tr><th>Card Name</th><th>Category</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
     <tbody id="arbBody"></tbody>
   </table>
 </div>
@@ -546,15 +546,19 @@ async function loadAll() {
     await scanDeepSales(20);
     setLoading(70);
 
-    // v3: fetch marketplace listings for arbitrage (multiple pages, recently-listed gets altFmv)
+    // v3: fetch marketplace listings for arbitrage — ALL categories
     arbListings = [];
+    const arbCategories = ['Pokemon','Basketball','Football','One Piece','Baseball','Soccer','Yu-Gi-Oh!'];
     try {
-      for (let pg = 0; pg < 20; pg++) {
-        const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=50&page=' + pg + '&metadataConditions=%7B%7D&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
-        const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
-        if (!items.length) break;
-        arbListings.push(...items);
-        if (items.length < 50) break;
+      for (const cat of arbCategories) {
+        const mc = encodeURIComponent(JSON.stringify({"Category":[cat]}));
+        for (let pg = 0; pg < 10; pg++) {
+          const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=50&page=' + pg + '&metadataConditions=' + mc + '&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
+          const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
+          if (!items.length) break;
+          arbListings.push(...items);
+          if (items.length < 50) break;
+        }
       }
     } catch(e) { console.warn('Arb listings fetch error:', e); }
     setLoading(80);
@@ -977,7 +981,8 @@ function renderArbitrage() {
       sourceName: sourceName,
       sourceUrl: sourceUrl,
       slug: item.slug || '',
-      address: item.address || ''
+      address: item.address || '',
+      category: (Array.isArray(item.metadata) && item.metadata.find(m => m.trait_type === 'Category')) ? item.metadata.find(m => m.trait_type === 'Category').value : ''
     });
   });
 
@@ -1020,7 +1025,7 @@ function renderArbitrage() {
   if (countEl) countEl.textContent = arbItems.length + ' opportunities';
 
   if (!arbItems.length) {
-    body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#64748b;padding:20px">No cards found at ' + arbMinDiscount + '%+ discount. Try lowering the threshold or wait for new listings.</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#64748b;padding:20px">No cards found at ' + arbMinDiscount + '%+ discount. Try lowering the threshold or wait for new listings.</td></tr>';
     return;
   }
 
@@ -1028,12 +1033,13 @@ function renderArbitrage() {
     // Discount color intensity based on how deep the discount is
     const discColor = a.discount >= 50 ? '#22c55e' : a.discount >= 40 ? '#4ade80' : '#86efac';
     const discBg = a.discount >= 50 ? 'rgba(34,197,94,.15)' : a.discount >= 40 ? 'rgba(74,222,128,.1)' : 'rgba(134,239,172,.07)';
-    const cardLink = a.slug ? 'https://phygitals.com/marketplace/' + a.slug : '';
+    const cardLink = a.address ? 'https://www.phygitals.com/card/' + a.address : '';
     const sourceLink = a.sourceUrl ? '<a href="' + a.sourceUrl + '" target="_blank" style="color:#3b82f6;text-decoration:none;font-size:.7rem">' + a.sourceName + ' \u2197</a>' : '<span style="font-size:.7rem;color:#64748b">' + a.sourceName + '</span>';
     const cardLinkHtml = cardLink ? '<a href="' + cardLink + '" target="_blank" style="color:#f59e0b;text-decoration:none;font-size:.7rem">Buy \u2197</a>' : '<span style="color:#64748b;font-size:.7rem">\u2014</span>';
 
     return '<tr>' +
       '<td style="font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + a.name + '">' + (a.name.length > 45 ? a.name.substring(0,43) + '...' : a.name) + '</td>' +
+      '<td style="color:#a78bfa;font-size:.75rem;white-space:nowrap">' + (a.category || '\u2014') + '</td>' +
       '<td style="color:#e2e8f0;font-weight:700">' + fmt$(a.listPrice) + '</td>' +
       '<td style="color:#94a3b8">' + fmt$(a.compPrice) + '</td>' +
       '<td style="background:' + discBg + ';color:' + discColor + ';font-weight:700;text-align:center;border-radius:4px">' + a.discount.toFixed(1) + '% off</td>' +
