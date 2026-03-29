@@ -971,6 +971,9 @@ function renderArbitrage() {
     const isEbay = sourceUrl.includes('ebay');
     const sourceName = isAlt ? 'Card Ladder' : isEbay ? 'eBay' : (sourceUrl ? 'External' : '\u2014');
 
+    const catMeta = Array.isArray(item.metadata) ? item.metadata.find(m => (m.trait_type || m.key) === 'Category') : null;
+    const category = catMeta ? catMeta.value : '';
+
     arbItems.push({
       name: item.name || 'Unknown',
       listPrice: priceUsd,
@@ -982,7 +985,7 @@ function renderArbitrage() {
       sourceUrl: sourceUrl,
       slug: item.slug || '',
       address: item.address || '',
-      category: (Array.isArray(item.metadata) && item.metadata.find(m => (m.trait_type || m.key) === 'Category')) ? item.metadata.find(m => m.trait_type === 'Category').value : ''
+      category: category
     });
   });
 
@@ -1007,7 +1010,8 @@ function renderArbitrage() {
       sourceName: isAlt ? 'Card Ladder' : 'External',
       sourceUrl: sourceUrl,
       slug: '',
-      address: nft.universalNFTDataAddress || ''
+      address: nft.universalNFTDataAddress || '',
+      category: ''
     });
   });
 
