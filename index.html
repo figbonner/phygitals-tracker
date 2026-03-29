@@ -290,7 +290,7 @@ function getISOWeek() {
   return now.getFullYear() + '-' + String(Math.ceil((days + jan1.getDay() + 1) / 7)).padStart(2,'0');
 }
 
-function _droughtTimeAgo(dateStr) {
+function timeAgo(dateStr) {
   if (!dateStr) return '';
   const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
   if (diff < 60) return Math.floor(diff) + 's ago';
@@ -457,7 +457,9 @@ async function loadAll() {
       } catch(e) { console.log('Mythic scan error:', e); }
     }
 
-    function _droughtTimeAgo(date) {
+    function timeAgo(input) {
+      const date = (input instanceof Date) ? input : new Date(input);
+      if (isNaN(date)) return '';
       const s = Math.floor((Date.now() - date.getTime()) / 1000);
       if (s < 60) return s + 's ago';
       const m = Math.floor(s / 60);
@@ -509,7 +511,7 @@ function renderDrought() {
         let mythicCell = '<td class="drought-no-data">Scanning...</td>';
         if (r.mythicHit) {
           const card = r.mythicHit.card.length > 35 ? r.mythicHit.card.substring(0, 35) + '...' : r.mythicHit.card;
-          const ago = _droughtTimeAgo(new Date(r.mythicHit.time));
+          const ago = timeAgo(new Date(r.mythicHit.time));
           mythicCell = '<td class="drought-mythic-hit">' + card + '<small>$' + r.mythicHit.price.toLocaleString() + ' \u00B7 ' + ago + '</small></td>';
         }
         return '<tr' + (isHot ? ' class="drought-hot-tag"' : '') + '>' +
