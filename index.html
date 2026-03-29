@@ -155,7 +155,10 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 .drought-overdue{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
 .drought-due{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
 .drought-normal{background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644}
-.drought-hot-tag{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
+.drought-mythic-hit{color:#f59e0b;font-weight:600;font-size:.82rem}
+    .drought-mythic-hit small{color:#9ca3af;font-weight:400;display:block;font-size:.72rem}
+    .drought-no-data{color:#6b7280;font-style:italic;font-size:.8rem}
+    .drought-hot-tag{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
 .drought-val{font-weight:700;font-size:.85rem}
 .drought-sub{font-size:.65rem;color:#64748b;margin-top:1px}
 </style>
@@ -227,7 +230,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
 <div class="section-header">🎰 Mythic Drought Tracker — Which Machines Are Due?</div>
 <div class="drought-wrap">
   <table class="drought-table">
-    <thead><tr><th>Pack</th><th>Category</th><th>Price</th><th>7D Pulls</th><th>Top Rarity</th><th>Odds</th><th>Expected Hits</th><th>Drought Meter</th><th>Status</th><th>Mythic Value</th></tr></thead>
+    <thead><tr><th>Pack</th><th>Category</th><th>Price</th><th>7D Pulls</th><th>Top Rarity</th><th>Odds</th><th>Expected Hits</th><th>Drought Meter</th><th>Status</th><th>Last Mythic</th><th>Mythic Value</th></tr></thead>
     <tbody id="droughtBody"></tbody>
   </table>
 </div>
@@ -418,354 +421,112 @@ async function loadAll() {
 
 // ——— RENDER ALL ——————————————————————————————————————————————————————————————
 // --- DROUGHT PROBABILITY TRACKER ---
-function renderDrought() {
-  let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
-  
-  // For each pack, find the top rarity (mythic or legendary)
-  const rows = packs.map(p => {
-    const rd = p.rarity_distribution || [];
-    const mythic = rd.find(r => r.name === 'Mythic');
-    const legendary = rd.find(r => r.name === 'Legendary');
-    const topRarity = mythic || legendary;
-    if (!topRarity) return null;
-    
-    const pulls7d = p.num_pulls_7d || 0;
-    const odds = topRarity.weight / 100; // e.g. 0.01 for 1%
-    if (odds <= 0) return null;
-    
-    // Expected number of hits in 7d pulls
-    const expectedHits = pulls7d * odds;
-    
-    // Probability of at least 1 hit: 1 - (1 - odds)^pulls
-    const probAtLeastOne = 1 - Math.pow(1 - odds, pulls7d);
-    
-    // Drought score: how many "expected cycles" without guaranteed hit
-    // If expectedHits < 1, machine is in drought territory
-    const droughtRatio = expectedHits; // <1 = overdue, >1 = likely hit
-    
-    // Average pulls per hit
-    const avgPullsPerHit = 1 / odds;
-    
-    return {
-      pack: p,
-      topRarity,
-      pulls7d,
-      odds,
-      expectedHits,
-      probAtLeastOne,
-      droughtRatio,
-      avgPullsPerHit,
-      minVal: topRarity.lower || 0,
-      maxVal: topRarity.upper || 0
-    };
-  }).filter(Boolean);
-  
-  // Sort by drought ratio ascending (most overdue first)
-  rows.sort((a, b) => a.droughtRatio - b.droughtRatio);
-  
-  let html = '';
-  rows.forEach(r => {
-    const p = r.pack;
-    const price = Number(p.mint_price);
-    const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-').toLowerCase();
-    const catLabel = p.repack ? 'Creator' : (p.category || 'Other');
-    
-    // Drought meter: fill based on probability
-    const pct = Math.min(r.probAtLeastOne * 100, 100);
-    let meterClass = 'drought-cool';
-    if (pct >= 95) meterClass = 'drought-hot';
-    else if (pct >= 70) meterClass = 'drought-warm';
-    
-    // Status badge
-    let statusHTML = '';
-    if (r.expectedHits >= 3) {
-      statusHTML = '<span class="drought-badge drought-hot-tag">\uD83D\uDD25 ' + r.expectedHits.toFixed(1) + 'x overdue</span>';
-    } else if (r.expectedHits >= 1.5) {
-      statusHTML = '<span class="drought-badge drought-overdue">\u26A0\uFE0F Overdue</span>';
-    } else if (r.expectedHits >= 0.7) {
-      statusHTML = '<span class="drought-badge drought-due">\u23F3 Getting due</span>';
-    } else {
-      statusHTML = '<span class="drought-badge drought-normal">\u2744\uFE0F Cold</span>';
+let mythicHits={};
+    async function scanForMythics(){
+      try{
+        const packById={};
+        allPacks.forEach(p=>{if(p.id)packById[String(p.id)]=p});
+        for(let pg=0;pg<10;pg++){
+          try{
+            const r=await fetch(CORS+'https://api.phygitals.com/api/marketplace/sales?page='+pg);
+            if(!r.ok)continue;
+            const d=await r.json();
+            const sales=d.sales||[];
+            if(!sales.length)break;
+            sales.forEach(s=>{
+              if(s.type!=='CLAW'||!s.clawId||!s.ebayListing)return;
+              const pack=packById[String(s.clawId)];
+              if(!pack||!pack.rarity_distribution)return;
+              const ep=parseFloat(s.ebayListing?.data?.price?.value||0);
+              if(!ep)return;
+              const mt=pack.rarity_distribution.find(x=>x.name==='Mythic');
+              if(!mt)return;
+              if(ep>=mt.lower){
+                const ex=mythicHits[String(s.clawId)];
+                if(!ex||new Date(s.time)>new Date(ex.time)){
+                  mythicHits[String(s.clawId)]={card:s.ebayListing?.data?.title||'Unknown',price:ep,time:s.time,from:s.from};
+                }
+              }
+            });
+          }catch(e){}
+        }
+      }catch(e){console.log('Mythic scan error:',e)}
     }
-    
-    html += '<tr>';
-    html += '<td><strong>' + p.name + '</strong></td>';
-    html += '<td><span class="cat-badge ' + catClass + '">' + catLabel + '</span></td>';
-    html += '<td>$' + price + '</td>';
-    html += '<td>' + r.pulls7d.toLocaleString() + '</td>';
-    html += '<td style="color:' + (r.topRarity.color || '#f59e0b') + '">' + r.topRarity.name + '</td>';
-    html += '<td>' + r.topRarity.weight + '% <span class="drought-sub">(1 in ' + Math.round(r.avgPullsPerHit) + ')</span></td>';
-    html += '<td><div class="drought-val">' + r.expectedHits.toFixed(1) + '</div><div class="drought-sub">' + (r.probAtLeastOne * 100).toFixed(1) + '% chance hit</div></td>';
-    html += '<td><div class="drought-meter"><div class="fill ' + meterClass + '" style="width:' + pct + '%"></div></div></td>';
-    html += '<td>' + statusHTML + '</td>';
-    html += '<td>$' + r.minVal.toLocaleString() + '\u2013$' + r.maxVal.toLocaleString() + '</td>';
-    html += '</tr>';
-  });
-  
-  document.getElementById('droughtBody').innerHTML = html;
-}
 
-function renderAll() {
-  renderHero();
-  renderBestRips();
-  renderDrought();
-  renderPullFeed();
-  renderLeaderboard();
-  renderPrizes();
-  renderPacks();
-  renderRarities();
-}
+    function renderDrought() {
+      let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
+      const rows = packs.map(p => {
+        const rd = p.rarity_distribution || [];
+        const mythic = rd.find(r => r.name === 'Mythic');
+        const legendary = rd.find(r => r.name === 'Legendary');
+        const topRarity = mythic || legendary;
+        if (!topRarity) return null;
+        const pulls7d = p.num_pulls_7d || 0;
+        const odds = topRarity.weight / 100;
+        const expectedHits = pulls7d * odds;
+        const probAtLeastOne = 1 - Math.pow(1 - odds, pulls7d);
+        const droughtRatio = expectedHits;
+        const avgPullsPerHit = 1 / odds;
+        const minVal = topRarity.lower || 0;
+        const maxVal = topRarity.upper || 0;
+        const mh = mythicHits[String(p.id)] || null;
+        return { pack: p, topRarity, pulls7d, odds, expectedHits, probAtLeastOne, droughtRatio, avgPullsPerHit, minVal, maxVal, mythicHit: mh };
+      }).filter(Boolean);
+      rows.sort((a, b) => a.droughtRatio - b.droughtRatio);
+      const body = document.getElementById('droughtBody');
+      if (!body) return;
+      body.innerHTML = rows.map(r => {
+        const p = r.pack;
+        const cat = (p.category || p.categories?.[0] || 'Other').toUpperCase();
+        const catColors = {pokemon:'#f59e0b',creator:'#22c55e','one piece':'#3b82f6',baseball:'#ef4444',football:'#8b5cf6','yu-gi-oh!':'#ec4899',basketball:'#f97316',other:'#6b7280'};
+        const catColor = catColors[cat.toLowerCase()] || '#6b7280';
+        const pctMeter = Math.min(r.probAtLeastOne * 100, 100);
+        let meterColor = '#3b82f6';
+        if (pctMeter > 40) meterColor = '#22c55e';
+        if (pctMeter > 65) meterColor = '#f59e0b';
+        if (pctMeter > 85) meterColor = '#ef4444';
+        let status = '', statusClass = 'drought-normal';
+        if (r.expectedHits < 0.3) { status = String.fromCodePoint(0x2744) + String.fromCodePoint(0xFE0F) + ' Cold'; statusClass = 'drought-normal'; }
+        else if (r.expectedHits < 1) { status = String.fromCodePoint(0x26A1) + ' Getting due'; statusClass = 'drought-due'; }
+        else if (r.expectedHits < 2) { status = String.fromCodePoint(0x26A0) + String.fromCodePoint(0xFE0F) + ' Overdue'; statusClass = 'drought-overdue'; }
+        else { status = String.fromCodePoint(0x1F525) + ' ' + r.expectedHits.toFixed(1) + 'x overdue'; statusClass = 'drought-overdue'; }
+        const isHot = r.expectedHits >= 2;
 
-// ——— HERO STATS ——————————————————————————————————————————————————————————————
-function renderHero() {
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  if (myIdx === -1) return;
-  const me = weeklyLB[myIdx];
-  const vol = me.volume / 1e6;
-  const rank = myIdx + 1;
-  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-  const below = myIdx < weeklyLB.length-1 ? weeklyLB[myIdx+1] : null;
-  const gapUp = above ? (above.volume - me.volume) / 1e6 : 0;
-  const gapDown = below ? (me.volume - below.volume) / 1e6 : 0;
+        // Last Mythic cell
+        let mythicCell = '<td class="drought-no-data">Scanning...</td>';
+        if (r.mythicHit) {
+          const card = r.mythicHit.card.length > 35 ? r.mythicHit.card.substring(0, 35) + '...' : r.mythicHit.card;
+          const ago = timeAgo(new Date(r.mythicHit.time));
+          mythicCell = '<td class="drought-mythic-hit">' + card + '<small>$' + r.mythicHit.price.toLocaleString() + ' ' + String.fromCodePoint(0x00B7) + ' ' + ago + '</small></td>';
+        }
 
-  document.getElementById('hRank').textContent = '#' + rank;
-  document.getElementById('hRankSub').textContent = 'of ' + weeklyLB.length + ' tracked';
-  document.getElementById('hVol').textContent = fmt$(vol);
-  document.getElementById('hPts').textContent = fmtK(me.points);
-  document.getElementById('hPtsSub').textContent = me.points.toLocaleString();
-  document.getElementById('hPulls').textContent = me.packs;
-  document.getElementById('hGapUp').textContent = fmt$(gapUp);
-  document.getElementById('hGapUpSub').textContent = above ? shortAddr(above.address) : '';
-  document.getElementById('hGapDown').textContent = fmt$(gapDown);
-  document.getElementById('hGapDownSub').textContent = below ? 'buffer above #' + (rank+1) : '';
-}
-
-// ——— GAP VISUALIZER ——————————————————————————————————————————————————————————
-
-// ——— BEST RIP NOW RECOMMENDER ————————————————————————————————————————————————
-function renderBestRips() {
-  const best = calcBestRips();
-  if (!best.length) {
-    document.getElementById('bestRipCards').innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">No packs in stock</div>';
-    return;
-  }
-
-  const medals = ['🥇 #1 Pick', '🥈 #2 Pick', '🥉 #3 Pick'];
-  let html = '';
-  best.forEach((b, i) => {
-    const p = b.pack;
-    const price = Number(p.mint_price);
-    const catLabel = p.repack ? 'Creator' : (p.category || 'Other');
-    html += `<div class="rip-card">
-      <div class="rip-rank">${medals[i]}</div>
-      <div class="rip-name">${p.name}</div>
-      <div class="rip-cat">${catLabel} · $${price}</div>
-      <div class="rip-stats">
-        <div class="rip-label">EV/Price</div><div class="rip-val">${(b.evRatio*100).toFixed(1)}%</div>
-        <div class="rip-label">EV</div><div class="rip-val">${fmt$(p.ev)}</div>
-        <div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ${b.variance.class}">${b.variance.icon} ${b.variance.label}</span></div>
-        <div class="rip-label">7D Pulls</div><div class="rip-val">${(p.num_pulls_7d || 0).toLocaleString()}</div>
-        <div class="rip-label">Score</div><div class="rip-val" style="color:#f59e0b">${(b.composite*100).toFixed(0)}/100</div>
-        <div class="rip-label">Buyback</div><div class="rip-val">${p.buyback_percent ? Math.round(p.buyback_percent*100)+'%' : '—'}</div>
-      </div>
-      <div class="rip-reason">${b.reasons}</div>
-    </div>`;
-  });
-  document.getElementById('bestRipCards').innerHTML = html;
-}
-
-// ——— LIVE PULL FEED ——————————————————————————————————————————————————————————
-function renderPullFeed() {
-  const container = document.getElementById('pullFeedScroll');
-  const packById = {};
-  const packBySlug = {};
-  allPacks.forEach(p => {
-    if (p.id) packById[String(p.id)] = p.name;
-    if (p.slug) packBySlug[p.slug] = p.name;
-  });
-  function resolvePackName(clawId) {
-    if (!clawId) return 'Unknown Pack';
-    if (packById[String(clawId)]) return packById[String(clawId)];
-    for (const [slug, name] of Object.entries(packBySlug)) {
-      if (String(clawId).includes(slug) || slug.includes(String(clawId))) return name;
+        return '<tr' + (isHot ? ' class="drought-hot-tag"' : '') + '>' +
+          '<td style="font-weight:600">' + (p.name||'') + '</td>' +
+          '<td><span style="background:' + catColor + '22;color:' + catColor + ';padding:2px 8px;border-radius:8px;font-size:.75rem;font-weight:600">' + cat + '</span></td>' +
+          '<td>$' + (p.mint_price/1e6).toFixed(0) + '</td>' +
+          '<td>' + r.pulls7d.toLocaleString() + '</td>' +
+          '<td style="color:' + (r.topRarity.color||'#f59e0b') + '">' + r.topRarity.name + '</td>' +
+          '<td>' + (r.odds*100).toFixed(2) + '% <small style="color:#9ca3af">(1 in ' + Math.round(1/r.odds).toLocaleString() + ')</small></td>' +
+          '<td><strong>' + r.expectedHits.toFixed(1) + '</strong><br><small style="color:#9ca3af">' + (r.probAtLeastOne*100).toFixed(1) + '% chance hit</small></td>' +
+          '<td><div class="drought-meter"><div style="width:' + pctMeter.toFixed(1) + '%;background:' + meterColor + ';height:100%;border-radius:6px"></div></div></td>' +
+          '<td><span class="drought-badge ' + statusClass + '">' + status + '</span></td>' +
+          mythicCell +
+          '<td>$' + r.minVal.toLocaleString() + String.fromCodePoint(0x2013) + '$' + r.maxVal.toLocaleString() + '</td>' +
+          '</tr>';
+      }).join('');
     }
-    return String(clawId);
-  }
-  let sales = Array.isArray(marketplaceListings) ? marketplaceListings : [];
-  if (!sales.length) {
-    container.innerHTML = '<div class="pull-feed-empty">No recent activity data available</div>';
-    return;
-  }
-  sales.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
-  let html = '';
-  sales.slice(0, 30).forEach(item => {
-    const isClaw = item.type === 'CLAW';
-    const cardName = item.type === 'BUY' && item.nft && item.nft.name ? item.nft.name : null;
-    const packName = resolvePackName(item.clawId);
-    const displayName = cardName || packName;
-    const amount = item.amount ? item.amount / 1e6 : 0;
-    const timeStr = timeAgo(item.time);
-    const wallet = item.from ? shortAddr(item.from) : '';
-    let rarityClass = 'rarity-common';
-    if (cardName && item.nft) {
-      const val = item.nft.price ? item.nft.price / 1e6 : amount;
-      if (val >= 100) rarityClass = 'rarity-legendary';
-      else if (val >= 50) rarityClass = 'rarity-epic';
-      else if (val >= 20) rarityClass = 'rarity-rare';
-      else if (val >= 10) rarityClass = 'rarity-uncommon';
+
+    function timeAgo(date) {
+      const s = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (s < 60) return s + 's ago';
+      const m = Math.floor(s / 60);
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      const d = Math.floor(h / 24);
+      return d + 'd ago';
     }
-    const typeIcon = isClaw ? '\u{1F9E4}' : '\u{1F6D2}';
-    const typeLabel = isClaw ? 'Pulled from ' + packName : (cardName ? 'Marketplace buy' : 'Bought');
-    html += '<div class="pull-item">';
-    html += '<div class="pull-rarity ' + rarityClass + '"></div>';
-    html += '<div class="pull-info">';
-    html += '<div class="pull-title">' + typeIcon + ' ' + displayName + '</div>';
-    html += '<div class="pull-detail">' + typeLabel + (wallet ? ' \u00b7 ' + wallet : '') + '</div>';
-    html += '</div>';
-    html += '<div class="pull-value">' + fmt$(amount) + '</div>';
-    html += '<div class="pull-time">' + timeStr + '</div>';
-    html += '</div>';
-  });
-  container.innerHTML = html;
-}
 
-// Auto-refresh feed every 30s
-// Auto-refresh: feed every 30s, full data every 2 minutes
-setInterval(async () => {
-  try {
-    const d = await apiFetch('/api/marketplace/sales?limit=50').catch(() => ({sales:[]}));
-    marketplaceListings = d.sales || [];
-    renderPullFeed();
-  } catch(e) {}
-}, 30000);
-
-setInterval(() => { loadAll(); }, 120000);
-
-// ——— LEADERBOARD ———————————————————————————————————————————————————————————
-function showLB(view) {
-  currentLBView = view;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  renderLeaderboard();
-}
-
-function renderLeaderboard() {
-  const data = currentLBView === 'weekly' ? weeklyLB : allTimeLB;
-  let html = '';
-  data.forEach((e, i) => {
-    const rank = i + 1;
-    const isMe = e.address === MY_WALLET;
-    const vol = e.volume / 1e6;
-    const name = shortAddr(e.address);
-    const rankClass = rank <= 3 ? ` rank-${rank}` : '';
-    html += `<tr class="${isMe ? 'me-row' : ''}">
-      <td><span class="rank-badge${rankClass}">${rank}</span></td>
-      <td><strong>${name}</strong></td>
-      <td>${fmt$(vol)}</td>
-      <td>${e.packs}</td>
-      <td class="points-col">${e.points.toLocaleString()}</td>
-    </tr>`;
-  });
-  document.getElementById('lbBody').innerHTML = html;
-}
-
-// ——— PRIZES ————————————————————————————————————————————————————————————————
-function renderPrizes() {
-  const colors = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
-  let html = '';
-  prizes.forEach((p, i) => {
-    html += `<div class="prize-card">
-      <div class="rank-title ${colors[i] || 'p10'}">${p.rank}</div>
-      <div class="prize-desc">${p.description}</div>
-    </div>`;
-  });
-  document.getElementById('prizeGrid').innerHTML = html;
-
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  if (myIdx !== -1) {
-    const rank = myIdx + 1;
-    const myPrize = prizes.find(p => p.rank === rank + (['st','nd','rd'][rank-1] || 'th'));
-    const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-    const gapUp = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
-    const abovePrize = rank > 1 ? prizes[rank-2] : null;
-    let note = `🎯 Your position: <strong>#${rank}</strong>`;
-    if (myPrize) note += ` — ${myPrize.description}`;
-    if (abovePrize && gapUp > 0) note += `<br>Climb ${fmt$(gapUp)} to reach #${rank-1} → unlock ${abovePrize.description}`;
-    document.getElementById('myPrizeNote').innerHTML = note;
-  }
-}
-
-// ——— PACK EV TABLE (with Variance/Risk column) ———————————————————————————————
-function renderPackFilters() {
-  const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : (p.category || 'other')))];
-  let html = '';
-  cats.forEach(c => {
-    const label = c === 'all' ? 'All Packs' : c === 'creator' ? '🎨 Creator' : c.charAt(0).toUpperCase() + c.slice(1);
-    const count = c === 'all' ? allPacks.length :
-                  c === 'creator' ? allPacks.filter(p=>p.repack).length :
-                  allPacks.filter(p=>!p.repack && (p.category||'other')===c).length;
-    html += `<button class="filter-btn ${c===currentFilter?'active':''}" onclick="filterPacks('${c}')">${label} (${count})</button>`;
-  });
-  document.getElementById('packFilters').innerHTML = html;
-}
-
-function filterPacks(cat) {
-  currentFilter = cat;
-  renderPacks();
-}
-
-function renderPacks() {
-  renderPackFilters();
-  let packs = [...allPacks];
-  if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
-  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
-
-  packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
-
-  let html = '';
-  packs.forEach(p => {
-    const price = Number(p.mint_price);
-    const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : 0;
-    const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
-    const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-').toLowerCase();
-    const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : (p.category || 'Other');
-    const packLabel = p.repack ? `${p.name} <span style="color:#94a3b8;font-size:.7rem">by ${p.creator_profile?.username || '?'}</span>` : p.name;
-    const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '—';
-    const lastPull = p.last_pull ? p.last_pull.substring(0,10) : '—';
-    const risk = calcVariance(p);
-
-    html += `<tr>
-      <td><span class="stock-dot ${p.in_stock ? 'stock-in' : 'stock-out'}"></span></td>
-      <td>${packLabel}</td>
-      <td><span class="cat-badge ${catClass}">${catLabel}</span></td>
-      <td>$${price}</td>
-      <td><strong>$${p.ev?.toFixed(2) || '—'}</strong></td>
-      <td>$${p.min_ev?.toFixed(1) || '?'}–$${p.max_ev?.toFixed(0) || '?'}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ${evClass}" style="width:${Math.min(ratio, 120)*0.6}px"></div><strong>${ratio}%</strong></div></td>
-      <td><span class="risk-badge ${risk.class}">${risk.icon} ${risk.label}</span></td>
-      <td>${buyback}</td>
-      <td>${(p.num_pulls_7d || 0).toLocaleString()}</td>
-      <td>${lastPull}</td>
-    </tr>`;
-  });
-  document.getElementById('packBody').innerHTML = html;
-}
-
-// ——— RARITY TABLE (with Value Ranges) ————————————————————————————————————————
-function renderRarities() {
-  let packs = [...allPacks];
-  if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
-  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
-
-  packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
-
-  let html = '';
-  packs.forEach(p => {
-    const rarities = p.rarity_distribution || [];
-    const price = Number(p.mint_price) || 1;
-    const buyback = p.buyback_percent || 0.85;
-
-    // Calculate value range for each rarity tier
     function getRarityInfo(name) {
       const r = rarities.find(rd => rd.name?.toLowerCase() === name.toLowerCase());
       if (!r) return { weight: '—%', valueRange: '' };
