@@ -982,7 +982,7 @@ function renderArbitrage() {
       sourceUrl: sourceUrl,
       slug: item.slug || '',
       address: item.address || '',
-      category: (Array.isArray(item.metadata) && item.metadata.find(m => m.trait_type === 'Category')) ? item.metadata.find(m => m.trait_type === 'Category').value : ''
+      category: (Array.isArray(item.metadata) && item.metadata.find(m => (m.trait_type || m.key) === 'Category')) ? item.metadata.find(m => m.trait_type === 'Category').value : ''
     });
   });
 
