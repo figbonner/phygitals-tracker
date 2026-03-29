@@ -218,7 +218,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   <div class="best-rip-header">
     <div>
       <div class="best-rip-title">&#127919; Top Picks Right Now</div>
-      <div class="best-rip-subtitle">Ranked by composite score: EV ratio, variance, activity, stock, and your leaderboard gap</div>
+      <div class="best-rip-subtitle">v4: Adjusted EV (real market sell rates), risk, liquidity, pull recency, freshness, activity &amp; LB strategy</div>
     </div>
   </div>
   <div class="best-rip-cards" id="bestRipCards">
@@ -361,6 +361,9 @@ let mythicHits = {};
 let currentLBView = 'weekly';
 let currentFilter = 'all';
 let arbMinDiscount = 30;  // minimum % discount threshold for arbitrage feed
+let marketTrends = {};
+let solPrice = 0;
+let pokemonTrends = {};
 
 // âââ API FETCH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 async function apiFetch(path) {
@@ -430,9 +433,58 @@ function calcVariance(pack) {
   return { score: volatility, label: 'Volatile', class: 'risk-volatile', icon: '\uD83C\uDFB2' };
 }
 
+// v4: MARKET INTELLIGENCE
+function calcMarketTrends() {
+  const cats = {};
+  arbListings.forEach(item => {
+    const catMeta = Array.isArray(item.metadata) ? item.metadata.find(m => (m.trait_type || m.key) === 'Category') : null;
+    const cat = catMeta ? catMeta.value : 'Unknown';
+    if (!cats[cat]) cats[cat] = { listed: 0, totalFmv: 0, totalPrice: 0, fmvCount: 0, belowFmv: 0 };
+    const c = cats[cat]; c.listed++;
+    const fmv = parseFloat(item.altFmv || 0);
+    const price = (item.price || 0) / 1e6;
+    if (fmv > 0 && price > 0) { c.totalFmv += fmv; c.totalPrice += price; c.fmvCount++; if (price < fmv) c.belowFmv++; }
+  });
+  marketTrends = {};
+  Object.entries(cats).forEach(([cat, c]) => {
+    marketTrends[cat.toLowerCase()] = {
+      listedCount: c.listed,
+      avgDiscount: c.fmvCount > 0 ? (1 - c.totalPrice / c.totalFmv) * 100 : 0,
+      sellThrough: c.fmvCount > 0 ? c.belowFmv / c.fmvCount : 0,
+      liquidity: Math.min(c.listed / 50, 1),
+      realFmvRatio: c.fmvCount > 0 ? c.totalPrice / c.totalFmv : 0.85
+    };
+  });
+}
+async function fetchSOLPrice() {
+  try { const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'); if (r.ok) { const d = await r.json(); solPrice = d.solana?.usd || 0; } } catch(e) {}
+}
+async function fetchPokemonTrends() {
+  try {
+    const sets = ['sv7','sv6','sv5','sv4','sv3','swsh12pt5','swsh12','swsh11'];
+    const r = await fetch('https://api.pokemontcg.io/v2/cards?q=(' + sets.map(s => 'set.id:' + s).join(' OR ') + ')&pageSize=20&select=name,set,cardmarket,tcgplayer&orderBy=-cardmarket.prices.trendPrice');
+    if (!r.ok) return;
+    const d = await r.json();
+    const st = {};
+    (d.data || []).forEach(card => {
+      const sn = card.set?.name; if (!sn) return;
+      if (!st[sn]) st[sn] = { totalAvg7: 0, totalAvg30: 0, count: 0 };
+      const cm = card.cardmarket?.prices;
+      if (cm && cm.avg7 && cm.avg30) { st[sn].totalAvg7 += cm.avg7; st[sn].totalAvg30 += cm.avg30; st[sn].count++; }
+    });
+    pokemonTrends = {};
+    Object.entries(st).forEach(([name, s]) => {
+      if (s.count > 0) { const a7 = s.totalAvg7/s.count, a30 = s.totalAvg30/s.count;
+        pokemonTrends[name] = { avg7: a7, avg30: a30, momentum: a30 > 0 ? ((a7-a30)/a30*100) : 0, direction: a7 > a30 ? 'up' : a7 < a30*0.95 ? 'down' : 'flat' };
+      }
+    });
+  } catch(e) {}
+}
+
 // âââ BEST RIP NOW ALGORITHM ââââââââââââââââââââââââââââââââââââââââââââââââââ
 function calcBestRips() {
   if (!allPacks.length) return [];
+  calcMarketTrends();
 
   const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
   const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
@@ -452,21 +504,37 @@ function calcBestRips() {
       const activityScore = activity;
       const buybackScore = buyback;
       const lbScore = (gapToNext > 0 && price <= gapToNext * 0.1) ? 1 : 0.5;
+      // v4: market intelligence scores
+      const cat = (p.category || '').toLowerCase();
+      const mkt = marketTrends[cat] || {};
+      const realFmvRatio = mkt.realFmvRatio || 0.85;
+      const adjustedEv = p.ev * realFmvRatio;
+      const adjustedEvRatio = adjustedEv / price;
+      const adjEvScore = Math.min(adjustedEvRatio, 1.3) / 1.3;
+      const evSpread = (p.max_ev && p.min_ev && p.ev > 0) ? (p.max_ev - p.min_ev) / p.ev : 1;
+      const spreadScore = 1 - Math.min(evSpread, 1);
+      let pullRecencyScore = 0.5;
+      if (p.last_pull) { const ms = (Date.now() - new Date(p.last_pull).getTime()) / 60000; pullRecencyScore = ms < 5 ? 1 : ms < 30 ? 0.9 : ms < 120 ? 0.7 : ms < 720 ? 0.4 : 0.2; }
+      const liquidityScore = mkt.liquidity || 0.3;
+      let freshnessScore = 0.3;
+      if (p.ev_updated_at) { const hrs = (Date.now() - new Date(p.ev_updated_at).getTime()) / 3600000; freshnessScore = hrs < 1 ? 1 : hrs < 6 ? 0.8 : hrs < 24 ? 0.5 : 0.2; }
 
-      const composite = (evScore * 0.40) + (steadyScore * 0.20) + (activityScore * 0.15) + (buybackScore * 0.15) + (lbScore * 0.10);
+      const composite = (adjEvScore*0.30)+(evScore*0.10)+(steadyScore*0.12)+(activityScore*0.10)+(buybackScore*0.10)+(spreadScore*0.06)+(pullRecencyScore*0.06)+(liquidityScore*0.06)+(freshnessScore*0.05)+(lbScore*0.05);
 
       let reasons = [];
-      if (evRatio >= 1.04) reasons.push('Strong EV (' + (evRatio*100).toFixed(1) + '%)');
+      if (adjustedEvRatio >= 1.0) reasons.push('\uD83D\uDCB0 Adj EV ' + (adjustedEvRatio*100).toFixed(0) + '%');
+      else if (evRatio >= 1.04) reasons.push('EV ' + (evRatio*100).toFixed(0) + '%');
+      if (realFmvRatio >= 0.92) reasons.push('\uD83D\uDFE2 Sells near FMV');
+      else if (realFmvRatio < 0.80) reasons.push('\uD83D\uDD34 ' + Math.round((1-realFmvRatio)*100) + '% below FMV');
       if (variance.label === 'Steady') reasons.push('Low risk');
+      if (pullRecencyScore >= 0.9) reasons.push('\u26A1 Just pulled');
       if (activity > 0.5) reasons.push('High activity');
       if (buyback >= 0.9) reasons.push(Math.round(buyback*100) + '% buyback');
-      // v2: EV freshness bonus
-      if (p.ev_updated_at) {
-        const hrs = (Date.now() - new Date(p.ev_updated_at).getTime()) / 3600000;
-        if (hrs < 6) reasons.push('Fresh EV (<6h)');
-      }
+      if (freshnessScore >= 0.8) reasons.push('\uD83D\uDD52 Fresh EV');
+      if (spreadScore >= 0.7) reasons.push('\uD83C\uDFAF Tight range');
+      if (liquidityScore >= 0.6) reasons.push('\uD83D\uDCCA Liquid mkt');
 
-      return { pack: p, composite, evRatio, variance, reasons: reasons.length ? reasons.join(' \u00B7 ') : 'Balanced pick' };
+      return { pack: p, composite, evRatio, adjustedEvRatio, variance, realFmvRatio, reasons: reasons.length ? reasons.join(' \u00B7 ') : 'Balanced pick' };
     })
     .sort((a, b) => b.composite - a.composite)
     .slice(0, 3);
@@ -546,6 +614,8 @@ async function loadAll() {
     await scanDeepSales(20);
     setLoading(70);
 
+    fetchSOLPrice(); fetchPokemonTrends().catch(()=>{});
+
     // v3: fetch marketplace listings for arbitrage — ALL categories
     arbListings = [];
     const arbCategories = ['Pokemon','Basketball','Football','One Piece','Baseball','Soccer','Yu-Gi-Oh!'];
@@ -568,7 +638,7 @@ async function loadAll() {
     const ts = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
     document.getElementById('tsBadge').textContent = 'Live \u00B7 ' + ts;
     document.getElementById('tsBadge').className = 'ts-badge live';
-    document.getElementById('dataMode').textContent = 'Live data \u00B7 200-player leaderboard \u00B7 deep sales scan \u00B7 marketplace arbitrage \u00B7 auto-refreshes';
+    document.getElementById('dataMode').textContent = 'Live data \u00B7 v4 market intelligence \u00B7 SOL $' + (solPrice || '?') + ' \u00B7 auto-refreshes';
     setLoading(100);
     setTimeout(() => setLoading(0), 500);
   } catch(e) {
@@ -639,11 +709,13 @@ function renderBestRips() {
       '<div class="rip-name">' + p.name + '</div>' +
       '<div class="rip-cat">' + catLabel + ' \u00B7 $' + price + '</div>' +
       '<div class="rip-stats">' +
-        '<div class="rip-label">EV/Price</div><div class="rip-val">' + (b.evRatio*100).toFixed(1) + '%</div>' +
-        '<div class="rip-label">EV</div><div class="rip-val">' + fmt$(p.ev) + '</div>' +
+        '<div class="rip-label">Raw EV</div><div class="rip-val">' + fmt$(p.ev) + ' (' + (b.evRatio*100).toFixed(0) + '%)</div>' +
+        '<div class="rip-label">Adj. EV</div><div class="rip-val" style="color:' + (b.adjustedEvRatio >= 1.0 ? '#22c55e' : b.adjustedEvRatio >= 0.9 ? '#f59e0b' : '#ef4444') + '">' + fmt$(p.ev * (b.realFmvRatio || 0.85)) + ' (' + ((b.adjustedEvRatio||0)*100).toFixed(0) + '%)</div>' +
+        '<div class="rip-label">Mkt Sell Rate</div><div class="rip-val" style="color:' + ((b.realFmvRatio||0) >= 0.92 ? '#22c55e' : (b.realFmvRatio||0) >= 0.83 ? '#f59e0b' : '#ef4444') + '">' + (b.realFmvRatio ? Math.round(b.realFmvRatio*100) + '% of FMV' : '\u2014') + '</div>' +
         '<div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ' + b.variance.class + '">' + b.variance.icon + ' ' + b.variance.label + '</span></div>' +
         '<div class="rip-label">7D Pulls</div><div class="rip-val">' + (p.num_pulls_7d || 0).toLocaleString() + '</div>' +
-        '<div class="rip-label">Score</div><div class="rip-val" style="color:#f59e0b">' + (b.composite*100).toFixed(0) + '/100</div>' +
+        '<div class="rip-label">Last Pull</div><div class="rip-val">' + (p.last_pull ? timeAgo(p.last_pull) : '\u2014') + '</div>' +
+        '<div class="rip-label">Score</div><div class="rip-val" style="color:#f59e0b;font-weight:800">' + (b.composite*100).toFixed(0) + '/100</div>' +
         '<div class="rip-label">Buyback</div><div class="rip-val">' + (p.buyback_percent ? Math.round(p.buyback_percent*100)+'%' : '\u2014') + '</div>' +
       '</div>' +
       '<div class="rip-reason">' + b.reasons + '</div>' +
