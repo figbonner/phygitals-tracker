@@ -226,6 +226,28 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   </div>
 </div>
 
+<!-- Enhanced Marketplace Arbitrage Tracker (v3) -->
+<div class="section-header">&#128176; Marketplace Arbitrage Feed &#8212; Best Value Cards Listed Now</div>
+<div class="arb-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div style="font-size:.75rem;color:#94a3b8">Listed cards priced <strong style="color:#22c55e">30%+ below</strong> Card Ladder / eBay comps &#8212; sorted by discount</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="font-size:.7rem;color:#64748b">Min discount:</label>
+      <select id="arbThreshold" onchange="arbMinDiscount=Number(this.value);renderArbitrage()" style="background:#0f1523;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:2px 6px;font-size:.75rem">
+        <option value="20">20%</option>
+        <option value="30" selected>30%</option>
+        <option value="40">40%</option>
+        <option value="50">50%</option>
+      </select>
+      <span id="arbCount" style="font-size:.7rem;color:#f59e0b;font-weight:600"></span>
+    </div>
+  </div>
+  <table class="arb-table">
+    <thead><tr><th>Card Name</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
+    <tbody id="arbBody"></tbody>
+  </table>
+</div>
+
 <!-- LIVE PULL FEED -->
 <div class="section-header"><span class="live-dot"></span> Live Pull Feed &#8212; Recent Activity</div>
 <div class="pull-feed">
@@ -234,6 +256,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   </div>
 </div>
 
+<div style="display:none">
 <!-- Leaderboard & Prizes -->
 <div class="section-header">&#127941; Weekly Leaderboard & Prizes (Top 200)</div>
 <div class="lb-prizes">
@@ -253,6 +276,7 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   </div>
 </div>
 
+</div>
 <!-- Mythic Drought Tracker -->
 <div class="section-header">&#127920; Mythic Drought Tracker &#8212; Which Machines Are Due?</div>
 <div class="drought-wrap">
@@ -309,28 +333,6 @@ tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
   <table class="pack-table">
     <thead><tr><th>Stock</th><th>Pack Name</th><th>Category</th><th>Price</th><th>EV</th><th>EV Range</th><th>EV/Price</th><th>Risk</th><th>Buyback</th><th>7D Pulls</th><th>Last Pull</th></tr></thead>
     <tbody id="packBody"></tbody>
-  </table>
-</div>
-
-<!-- Enhanced Marketplace Arbitrage Tracker (v3) -->
-<div class="section-header">&#128176; Marketplace Arbitrage Feed &#8212; Best Value Cards Listed Now</div>
-<div class="arb-wrap">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:.75rem;color:#94a3b8">Listed cards priced <strong style="color:#22c55e">30%+ below</strong> Card Ladder / eBay comps &#8212; sorted by discount</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <label style="font-size:.7rem;color:#64748b">Min discount:</label>
-      <select id="arbThreshold" onchange="arbMinDiscount=Number(this.value);renderArbitrage()" style="background:#0f1523;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:2px 6px;font-size:.75rem">
-        <option value="20">20%</option>
-        <option value="30" selected>30%</option>
-        <option value="40">40%</option>
-        <option value="50">50%</option>
-      </select>
-      <span id="arbCount" style="font-size:.7rem;color:#f59e0b;font-weight:600"></span>
-    </div>
-  </div>
-  <table class="arb-table">
-    <thead><tr><th>Card Name</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
-    <tbody id="arbBody"></tbody>
   </table>
 </div>
 
@@ -547,12 +549,12 @@ async function loadAll() {
     // v3: fetch marketplace listings for arbitrage (multiple pages, recently-listed gets altFmv)
     arbListings = [];
     try {
-      for (let pg = 0; pg < 10; pg++) {
-        const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=200&page=' + pg + '&metadataConditions=%7B%7D&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
+      for (let pg = 0; pg < 20; pg++) {
+        const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=50&page=' + pg + '&metadataConditions=%7B%7D&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
         const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
         if (!items.length) break;
         arbListings.push(...items);
-        if (items.length < 200) break;
+        if (items.length < 50) break;
       }
     } catch(e) { console.warn('Arb listings fetch error:', e); }
     setLoading(80);
