@@ -399,7 +399,8 @@ async function loadAll() {
     prizes = prizeData.prizes || [];
     marketplaceListings = listingsData.sales || [];
 
-    await scanForMythics();renderAll();
+    await scanForMythics();
+    renderAll();
 
     const ts = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
     document.getElementById('tsBadge').textContent = 'Live · ' + ts;
@@ -418,54 +419,112 @@ async function loadAll() {
 
 // ——— RENDER ALL ——————————————————————————————————————————————————————————————
 // --- DROUGHT PROBABILITY TRACKER ---
-let mythicHits={};
-async function scanForMythics(){try{const packById={};allPacks.forEach(p=>{if(p.id)packById[String(p.id)]=p});for(let pg=0;pg<10;pg++){try{const r=await fetch(PROXY+"https://api.phygitals.com/api/marketplace/sales?page="+pg);if(!r.ok)continue;const d=await r.json();const sales=d.sales||[];if(!sales.length)break;sales.forEach(s=>{if(s.type!=="CLAW"||!s.clawId||!s.ebayListing)return;const pack=packById[String(s.clawId)];if(!pack||!pack.rarity_distribution)return;const ep=parseFloat(s.ebayListing?.data?.price?.value||0);if(!ep)return;const mt=pack.rarity_distribution.find(x=>x.name==="Mythic");if(!mt)return;if(ep>=mt.lower){const ex=mythicHits[String(s.clawId)];if(!ex||new Date(s.time)>new Date(ex.time)){mythicHits[String(s.clawId)]={card:s.ebayListing?.data?.title||"Unknown",price:ep,time:s.time,from:s.from}}}});}catch(e){}}}catch(e){console.log("Mythic scan error:",e)}}
-function timeAgo(date){const s=Math.floor((Date.now()-date.getTime())/1000);if(s<60)return s+"s ago";const m=Math.floor(s/60);if(m<60)return m+"m ago";const h=Math.floor(m/60);if(h<24)return h+"h ago";const d=Math.floor(h/24);return d+"d ago";}
-function renderDrought(){
-      let packs=[...allPacks].filter(p=>p.in_stock&&(p.num_pulls_7d||0)>0);
-      const rows=packs.map(p=>{
-        const rd=p.rarity_distribution||[];
-        const mythic=rd.find(r=>r.name==='Mythic');
-        const legendary=rd.find(r=>r.name==='Legendary');
-        const topRarity=mythic||legendary;
-        if(!topRarity)return null;
-        const pulls7d=p.num_pulls_7d||0;
-        const odds=topRarity.weight/100;
-        const expectedHits=pulls7d*odds;
-        const probAtLeastOne=1-Math.pow(1-odds,pulls7d);
-        const droughtRatio=expectedHits;
-        const avgPullsPerHit=1/odds;
-        const minVal=topRarity.lower||0;
-        const maxVal=topRarity.upper||0;
-        const mh=mythicHits[String(p.id)]||null;
-        return{pack:p,topRarity,pulls7d,odds,expectedHits,probAtLeastOne,droughtRatio,avgPullsPerHit,minVal,maxVal,mythicHit:mh};
-      }).filter(Boolean);
-      rows.sort((a,b)=>a.droughtRatio-b.droughtRatio);
-      const body=document.getElementById('droughtBody');
-      if(!body)return;
-      body.innerHTML=rows.map(r=>{
-        const p=r.pack;
-        const cat=(p.category||p.categories?.[0]||'Other').toUpperCase();
-        const catColors={pokemon:'#f59e0b',creator:'#22c55e','one piece':'#3b82f6',baseball:'#ef4444',football:'#8b5cf6','yu-gi-oh!':'#ec4899',basketball:'#f97316',other:'#6b7280'};
-        const catColor=catColors[cat.toLowerCase()]||'#6b7280';
-        const pctMeter=Math.min(r.probAtLeastOne*100,100);
-        let meterColor='#3b82f6';
-        if(pctMeter>40)meterColor='#22c55e';
-        if(pctMeter>65)meterColor='#f59e0b';
-        if(pctMeter>85)meterColor='#ef4444';
-        let status='',statusClass='drought-normal';
-        if(r.expectedHits<0.3){status='\u2744\uFE0F Cold';statusClass='drought-normal';}
-        else if(r.expectedHits<1){status='\u26A1 Getting due';statusClass='drought-due';}
-        else if(r.expectedHits<2){status='\u26A0\uFE0F Overdue';statusClass='drought-overdue';}
-        else{status='\uD83D\uDD25 '+r.expectedHits.toFixed(1)+'x overdue';statusClass='drought-overdue';}
-        const isHot=r.expectedHits>=2;
-        let mythicCell='<td class="drought-no-data">Scanning...</td>';
-        if(r.mythicHit){
-          const card=r.mythicHit.card.length>35?r.mythicHit.card.substring(0,35)+'...':r.mythicHit.card;
-          const ago=timeAgo(new Date(r.mythicHit.time));
-          mythicCell='<td class="drought-mythic-hit">'+card+'<small>$'+r.mythicHit.price.toLocaleString()+' \u00B7 '+ago+'</small></td>';
+    let mythicHits = {};
+
+    async function scanForMythics() {
+      try {
+        const packById = {};
+        allPacks.forEach(p => { if (p.id) packById[String(p.id)] = p; });
+        for (let pg = 0; pg < 10; pg++) {
+          try {
+            const r = await fetch(PROXY + 'https://api.phygitals.com/api/marketplace/sales?page=' + pg);
+            if (!r.ok) continue;
+            const d = await r.json();
+            const sales = d.sales || [];
+            if (!sales.length) break;
+            sales.forEach(s => {
+              if (s.type !== 'CLAW' || !s.clawId || !s.ebayListing) return;
+              const pack = packById[String(s.clawId)];
+              if (!pack || !pack.rarity_distribution) return;
+              const ep = parseFloat(s.ebayListing?.data?.price?.value || 0);
+              if (!ep) return;
+              const mt = pack.rarity_distribution.find(x => x.name === 'Mythic');
+              if (!mt) return;
+              if (ep >= mt.lower) {
+                const ex = mythicHits[String(s.clawId)];
+                if (!ex || new Date(s.time) > new Date(ex.time)) {
+                  mythicHits[String(s.clawId)] = {
+                    card: s.ebayListing?.data?.title || 'Unknown',
+                    price: ep,
+                    time: s.time,
+                    from: s.from
+                  };
+                }
+              }
+            });
+          } catch(e) {}
         }
-        return '<tr'+(isHot?' class="drought-hot-tag"':'')+'><td style="font-weight:600">'+(p.name||'')+'</td><td><span style="background:'+catColor+'22;color:'+catColor+';padding:2px 8px;border-radius:8px;font-size:.75rem;font-weight:600">'+cat+'</span></td><td>$'+(p.mint_price/1e6).toFixed(0)+'</td><td>'+r.pulls7d.toLocaleString()+'</td><td style="color:'+(r.topRarity.color||'#f59e0b')+'">'+r.topRarity.name+'</td><td>'+(r.odds*100).toFixed(2)+'% <small style="color:#9ca3af">(1 in '+Math.round(1/r.odds).toLocaleString()+')</small></td><td><strong>'+r.expectedHits.toFixed(1)+'</strong><br><small style="color:#9ca3af">'+(r.probAtLeastOne*100).toFixed(1)+'% chance hit</small></td><td><div class="drought-meter"><div style="width:'+pctMeter.toFixed(1)+'%;background:'+meterColor+';height:100%;border-radius:6px"></div></div></td><td><span class="drought-badge '+statusClass+'">'+status+'</span></td>'+mythicCell+'<td>$'+r.minVal.toLocaleString()+'\u2013$'+r.maxVal.toLocaleString()+'</td></tr>';
+      } catch(e) { console.log('Mythic scan error:', e); }
+    }
+
+    function timeAgo(date) {
+      const s = Math.floor((Date.now() - date.getTime()) / 1000);
+      if (s < 60) return s + 's ago';
+      const m = Math.floor(s / 60);
+      if (m < 60) return m + 'm ago';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ago';
+      const d = Math.floor(h / 24);
+      return d + 'd ago';
+    }
+
+function renderDrought() {
+      let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
+      const rows = packs.map(p => {
+        const rd = p.rarity_distribution || [];
+        const mythic = rd.find(r => r.name === 'Mythic');
+        const legendary = rd.find(r => r.name === 'Legendary');
+        const topRarity = mythic || legendary;
+        if (!topRarity) return null;
+        const pulls7d = p.num_pulls_7d || 0;
+        const odds = topRarity.weight / 100;
+        const expectedHits = pulls7d * odds;
+        const probAtLeastOne = 1 - Math.pow(1 - odds, pulls7d);
+        const droughtRatio = expectedHits;
+        const avgPullsPerHit = 1 / odds;
+        const minVal = topRarity.lower || 0;
+        const maxVal = topRarity.upper || 0;
+        const mh = mythicHits[String(p.id)] || null;
+        return { pack: p, topRarity, pulls7d, odds, expectedHits, probAtLeastOne, droughtRatio, avgPullsPerHit, minVal, maxVal, mythicHit: mh };
+      }).filter(Boolean);
+      rows.sort((a, b) => a.droughtRatio - b.droughtRatio);
+      const body = document.getElementById('droughtBody');
+      if (!body) return;
+      body.innerHTML = rows.map(r => {
+        const p = r.pack;
+        const cat = (p.category || p.categories?.[0] || 'Other').toUpperCase();
+        const catColors = {pokemon:'#f59e0b',creator:'#22c55e','one piece':'#3b82f6',baseball:'#ef4444',football:'#8b5cf6','yu-gi-oh!':'#ec4899',basketball:'#f97316',other:'#6b7280'};
+        const catColor = catColors[cat.toLowerCase()] || '#6b7280';
+        const pctMeter = Math.min(r.probAtLeastOne * 100, 100);
+        let meterColor = '#3b82f6';
+        if (pctMeter > 40) meterColor = '#22c55e';
+        if (pctMeter > 65) meterColor = '#f59e0b';
+        if (pctMeter > 85) meterColor = '#ef4444';
+        let status = '', statusClass = 'drought-normal';
+        if (r.expectedHits < 0.3) { status = '\u2744\uFE0F Cold'; statusClass = 'drought-normal'; }
+        else if (r.expectedHits < 1) { status = '\u26A1 Getting due'; statusClass = 'drought-due'; }
+        else if (r.expectedHits < 2) { status = '\u26A0\uFE0F Overdue'; statusClass = 'drought-overdue'; }
+        else { status = '\uD83D\uDD25 ' + r.expectedHits.toFixed(1) + 'x overdue'; statusClass = 'drought-overdue'; }
+        const isHot = r.expectedHits >= 2;
+        let mythicCell = '<td class="drought-no-data">Scanning...</td>';
+        if (r.mythicHit) {
+          const card = r.mythicHit.card.length > 35 ? r.mythicHit.card.substring(0, 35) + '...' : r.mythicHit.card;
+          const ago = timeAgo(new Date(r.mythicHit.time));
+          mythicCell = '<td class="drought-mythic-hit">' + card + '<small>$' + r.mythicHit.price.toLocaleString() + ' \u00B7 ' + ago + '</small></td>';
+        }
+        return '<tr' + (isHot ? ' class="drought-hot-tag"' : '') + '>' +
+          '<td style="font-weight:600">' + (p.name || '') + '</td>' +
+          '<td><span style="background:' + catColor + '22;color:' + catColor + ';padding:2px 8px;border-radius:8px;font-size:.75rem;font-weight:600">' + cat + '</span></td>' +
+          '<td>$' + (p.mint_price / 1e6).toFixed(0) + '</td>' +
+          '<td>' + r.pulls7d.toLocaleString() + '</td>' +
+          '<td style="color:' + (r.topRarity.color || '#f59e0b') + '">' + r.topRarity.name + '</td>' +
+          '<td>' + (r.odds * 100).toFixed(2) + '% <small style="color:#9ca3af">(1 in ' + Math.round(1 / r.odds).toLocaleString() + ')</small></td>' +
+          '<td><strong>' + r.expectedHits.toFixed(1) + '</strong><br><small style="color:#9ca3af">' + (r.probAtLeastOne * 100).toFixed(1) + '% chance hit</small></td>' +
+          '<td><div class="drought-meter"><div style="width:' + pctMeter.toFixed(1) + '%;background:' + meterColor + ';height:100%;border-radius:6px"></div></div></td>' +
+          '<td><span class="drought-badge ' + statusClass + '">' + status + '</span></td>' +
+          mythicCell +
+          '<td>$' + r.minVal.toLocaleString() + '\u2013$' + r.maxVal.toLocaleString() + '</td>' +
+          '</tr>';
       }).join('');
     }
 
