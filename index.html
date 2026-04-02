@@ -1,1298 +1,1320 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Phygitals Tracker v2</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#0f1523;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:20px;max-width:1500px;margin:0 auto}
-h1{font-size:1.8rem;margin-bottom:4px}
-.subtitle{color:#94a3b8;font-size:.85rem;margin-bottom:20px}
-.ts-badge{position:fixed;top:12px;right:12px;background:#1e293b;border:1px solid #334155;border-radius:8px;padding:6px 14px;font-size:.75rem;color:#94a3b8;z-index:100}
-.ts-badge.live{border-color:#22c55e;color:#22c55e}
-.loading-bar{width:100%;height:3px;background:#1e293b;position:fixed;top:0;left:0;z-index:200}
-.loading-bar .fill{height:100%;background:linear-gradient(90deg,#f59e0b,#22c55e);width:0%;transition:width .3s}
-/* Hero stats */
-.hero{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:24px}
-.hero .card{background:#1e293b;border-radius:10px;padding:16px;border-top:3px solid #3b82f6}
-.hero .card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#64748b}
-.hero .card .value{font-size:1.8rem;font-weight:700;margin-top:4px}
-.hero .card .sub{font-size:.75rem;color:#94a3b8;margin-top:2px}
-.hero .card:nth-child(5) .value{color:#ef4444}
-.hero .card:nth-child(6) .value{color:#22c55e}
-/* Section headers */
-.section-header{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#94a3b8;margin:28px 0 14px;display:flex;align-items:center;gap:8px}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phygitals Tracker v5</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-/* ===== BEST RIP NOW RECOMMENDER ===== */
-.best-rip{background:linear-gradient(135deg,#1e293b 0%,#1a2332 100%);border:2px solid #f59e0b;border-radius:14px;padding:20px;margin-bottom:24px;position:relative;overflow:hidden}
-.best-rip::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(245,158,11,.06) 0%,transparent 70%);pointer-events:none}
-.best-rip-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.best-rip-title{font-size:1.1rem;font-weight:800;color:#f59e0b}
-.best-rip-subtitle{font-size:.75rem;color:#94a3b8}
-.best-rip-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.rip-card{background:#0f1523;border-radius:10px;padding:14px;border:1px solid #334155;position:relative;transition:border-color .2s}
-.rip-card:first-child{border-color:#f59e0b}
-.rip-card .rip-rank{position:absolute;top:8px;right:10px;font-size:.65rem;font-weight:700;color:#f59e0b;background:#f59e0b22;padding:2px 8px;border-radius:10px}
-.rip-card .rip-name{font-weight:700;font-size:.95rem;margin-bottom:2px}
-.rip-card .rip-cat{font-size:.7rem;color:#94a3b8;margin-bottom:8px}
-.rip-card .rip-stats{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:.75rem}
-.rip-card .rip-stats .rip-label{color:#64748b}
-.rip-card .rip-stats .rip-val{text-align:right;font-weight:600}
-.rip-card .rip-reason{margin-top:8px;font-size:.7rem;color:#22c55e;font-style:italic;border-top:1px solid #334155;padding-top:6px}
+        :root {
+            --bg-primary: #0a0e1a;
+            --bg-secondary: #111827;
+            --border: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --accent-amber: #f59e0b;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-purple: #a855f7;
+            --accent-cyan: #06b6d4;
+            --accent-orange: #b45309;
+        }
 
-/* ===== LIVE PULL FEED ===== */
-.pull-feed{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:24px;max-height:260px;overflow:hidden;position:relative}
-.pull-feed-scroll{overflow-y:auto;max-height:220px;scrollbar-width:thin;scrollbar-color:#334155 transparent}
-.pull-feed-scroll::-webkit-scrollbar{width:5px}
-.pull-feed-scroll::-webkit-scrollbar-track{background:transparent}
-.pull-feed-scroll::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}
-.pull-item{display:flex;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;transition:background .2s;border-bottom:1px solid #1a2332}
-.pull-item:hover{background:#0f1523}
-.pull-item .pull-rarity{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.rarity-common{background:#94a3b8}
-.rarity-uncommon{background:#22c55e}
-.rarity-rare{background:#3b82f6}
-.rarity-epic{background:#a855f7}
-.rarity-legendary{background:#ef4444}
-.rarity-mythic{background:#ef4444;box-shadow:0 0 8px #ef4444}
-.pull-item .pull-info{flex:1;min-width:0}
-.pull-item .pull-info .pull-title{font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pull-item .pull-info .pull-detail{font-size:.7rem;color:#94a3b8}
-.pull-item .pull-value{font-weight:700;font-size:.85rem;flex-shrink:0}
-.pull-item .pull-time{font-size:.65rem;color:#64748b;flex-shrink:0;width:50px;text-align:right}
-.pull-feed-empty{text-align:center;color:#64748b;padding:30px;font-size:.85rem}
-.live-dot{display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-right:6px;animation:pulse-dot 2s infinite}
-@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
 
-/* Leaderboard + Prizes */
-.lb-prizes{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
-.lb-section{background:#1e293b;border-radius:10px;padding:16px;max-height:500px;overflow-y:auto}
-.tab-row{display:flex;gap:8px;margin-bottom:12px}
-.tab-btn{padding:5px 16px;border-radius:20px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:.8rem}
-.tab-btn.active{background:#22c55e;color:#000;border-color:#22c55e;font-weight:600}
-table{width:100%;border-collapse:collapse;font-size:.82rem}
-th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;letter-spacing:1px}
-td{padding:8px;border-top:1px solid #1a2332}
-tr.me-row{background:#1e293b;border-left:3px solid #f59e0b}
-.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:.75rem;font-weight:700}
-.rank-1{background:#fbbf24;color:#000}.rank-2{background:#94a3b8;color:#000}.rank-3{background:#d97706;color:#000}
-.points-col{color:#22c55e}
-/* Prize grid */
-.prize-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
-.prize-card{background:#0f1523;border-radius:8px;padding:10px;text-align:center;border:1px solid #334155}
-.prize-card .rank-title{font-size:1.3rem;font-weight:800}
-.prize-card .prize-desc{font-size:.7rem;color:#94a3b8;margin-top:4px}
-.p1{color:#fbbf24}.p2{color:#94a3b8}.p3{color:#d97706}.p4{color:#a855f7}.p5{color:#22c55e}
-.p6{color:#3b82f6}.p7{color:#ef4444}.p8{color:#64748b}.p9{color:#64748b}.p10{color:#64748b}
-/* Pack table */
-.pack-table-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
-.pack-filters{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.filter-btn{padding:4px 12px;border-radius:16px;border:1px solid #334155;background:transparent;color:#94a3b8;cursor:pointer;font-size:.75rem}
-.filter-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
-.pack-table{width:100%;font-size:.8rem}
-.pack-table th{position:sticky;top:0;background:#1e293b;z-index:2}
-.cat-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;text-transform:uppercase}
-.cat-pokemon{background:#22c55e;color:#000}
-.cat-one-piece{background:#3b82f6;color:#fff}
-.cat-basketball{background:#f59e0b;color:#000}
-.cat-baseball{background:#a855f7;color:#fff}
-.cat-football{background:#ef4444;color:#fff}
-.cat-soccer{background:#06b6d4;color:#000}
-.cat-hockey{background:#64748b;color:#fff}
-.cat-creator{background:#d946ef;color:#fff}
-.cat-yu-gi-oh{background:#b45309;color:#fff}
-.cat-other{background:#475569;color:#fff}
-.stock-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
-.stock-in{background:#22c55e}.stock-out{background:#ef4444}
-.ev-bar{height:8px;border-radius:4px;min-width:20px}
-.ev-good{background:linear-gradient(90deg,#22c55e,#16a34a)}
-.ev-ok{background:linear-gradient(90deg,#f59e0b,#d97706)}
-.ev-bad{background:linear-gradient(90deg,#ef4444,#dc2626)}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.5;
+        }
 
-/* ===== VARIANCE / RISK BADGE ===== */
-.risk-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600}
-.risk-steady{background:#22c55e22;color:#22c55e;border:1px solid #22c55e44}
-.risk-moderate{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
-.risk-volatile{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
-.risk-icon{font-size:.7rem}
+        .progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-amber), var(--accent-green), var(--accent-blue));
+            width: 0%;
+            z-index: 1000;
+            transition: width 0.3s ease;
+        }
 
-/* Rarity table with value ranges */
-.rarity-table{width:100%;font-size:.8rem}
-.rarity-val-range{display:block;font-size:.65rem;color:#64748b;margin-top:1px}
+        .progress-bar.complete {
+            width: 100%;
+        }
 
-/* Refresh button */
-.refresh-btn{position:fixed;bottom:20px;right:20px;background:#3b82f6;color:#fff;border:none;border-radius:50%;width:48px;height:48px;font-size:1.2rem;cursor:pointer;z-index:100;box-shadow:0 4px 12px rgba(59,130,246,.4)}
-.refresh-btn:hover{background:#2563eb}
-.refresh-btn.spinning{animation:spin 1s linear infinite}
-@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        .status-bar {
+            position: fixed;
+            top: 8px;
+            right: 16px;
+            background: rgba(17, 24, 39, 0.8);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
 
-/* ===== DROUGHT PROBABILITY TRACKER ===== */
-.drought-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
-.drought-table{width:100%;font-size:.8rem;border-collapse:collapse}
-.drought-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;letter-spacing:1px;position:sticky;top:0;background:#1e293b;z-index:2}
-.drought-table td{padding:8px;border-top:1px solid #1a2332}
-.drought-meter{height:8px;border-radius:4px;background:#1a2332;overflow:hidden;min-width:80px}
-.drought-meter .fill{height:100%;border-radius:4px;transition:width .3s}
-.drought-cool{background:linear-gradient(90deg,#3b82f6,#22c55e)}
-.drought-warm{background:linear-gradient(90deg,#f59e0b,#ef4444)}
-.drought-hot{background:linear-gradient(90deg,#ef4444,#dc2626);animation:pulse-bar 1.5s infinite}
-@keyframes pulse-bar{0%,100%{opacity:1}50%{opacity:.7}}
-.drought-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600}
-.drought-overdue{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
-.drought-due{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b44}
-.drought-normal{background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644}
-.drought-mythic-hit{color:#f59e0b;font-weight:600;font-size:.82rem}.drought-mythic-hit small{color:#9ca3af;font-weight:400;display:block;font-size:.72rem}.drought-no-data{color:#6b7280;font-style:italic;font-size:.8rem}.drought-hot-tag{background:#ef444422;color:#ef4444;border:1px solid #ef444444}
-.drought-val{font-weight:700;font-size:.85rem}
-.drought-sub{font-size:.65rem;color:#64748b;margin-top:1px}
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
-/* ===== EV FRESHNESS ===== */
-.freshness-fresh{color:#22c55e}
-.freshness-stale{color:#f59e0b}
-.freshness-old{color:#ef4444}
+        .status-label {
+            color: var(--text-secondary);
+        }
 
-/* ===== WHALE TRACKER ===== */
-.whale-wrap{background:#1e293b;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
-.whale-table{width:100%;font-size:.8rem;border-collapse:collapse}
-.whale-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;letter-spacing:1px}
-.whale-table td{padding:8px;border-top:1px solid #1a2332}
-.whale-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:.65rem;font-weight:600;background:#3b82f622;color:#3b82f6;border:1px solid #3b82f644}
+        .status-value {
+            color: var(--accent-green);
+            font-weight: 600;
+        }
 
-/* ===== MYTHIC HEATMAP ===== */
-.heatmap-wrap{background:#1e293b;border-radius:10px;padding:16px;margin-bottom:24px}
-.heatmap-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:2px}
-.heatmap-cell{aspect-ratio:1;border-radius:3px;position:relative;cursor:pointer}
-.heatmap-cell:hover{outline:2px solid #fff;z-index:1}
-.heatmap-label{font-size:.65rem;color:#64748b;text-align:center;margin-top:2px}
-.heatmap-legend{display:flex;gap:12px;margin-top:12px;font-size:.7rem;color:#94a3b8;align-items:center}
-.heatmap-legend .swatch{width:14px;height:14px;border-radius:3px;display:inline-block;vertical-align:middle}
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 20px 40px;
+        }
 
-/* ===== ARBITRAGE SECTION ===== */
-.arb-wrap{background:linear-gradient(135deg,#1e293b 0%,#1a2a1e 100%);border:1px solid #22c55e33;border-radius:10px;padding:16px;overflow-x:auto;margin-bottom:24px}
-.arb-table{width:100%;font-size:.8rem;border-collapse:collapse}
-.arb-table th{text-align:left;color:#64748b;font-weight:600;padding:6px 8px;text-transform:uppercase;font-size:.7rem;border-bottom:1px solid #334155}
-.arb-table td{padding:8px 8px;border-top:1px solid #1a2332}
-.arb-table tr:hover{background:rgba(34,197,94,.05)}
-.arb-profit{color:#22c55e;font-weight:700}
-.arb-loss{color:#ef4444;font-weight:700}
+        .card {
+            background: rgba(30, 41, 59, 0.4);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(10px);
+        }
 
-/* ===== PACK VELOCITY ===== */
-.velocity-wrap{background:#1e293b;border-radius:10px;padding:16px;margin-bottom:24px}
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
 
-/* Responsive */
-@media(max-width:900px){
-  .hero{grid-template-columns:repeat(3,1fr)}
-  .lb-prizes{grid-template-columns:1fr}
-  .prize-grid{grid-template-columns:repeat(3,1fr)}
-  .best-rip-cards{grid-template-columns:1fr}
-  .heatmap-grid{grid-template-columns:repeat(12,1fr)}
-}
-@media(max-width:600px){
-  .hero{grid-template-columns:repeat(2,1fr)}
-  .prize-grid{grid-template-columns:repeat(2,1fr)}
-  .heatmap-grid{grid-template-columns:repeat(8,1fr)}
-}
-</style>
+        .hero-card {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            border-top: 3px solid var(--accent-blue);
+        }
+
+        .hero-card .label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .hero-card .value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 4px 0;
+        }
+
+        .hero-card .sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .hero-card:nth-child(5) .value {
+            color: var(--accent-red);
+        }
+
+        .hero-card:nth-child(6) .value {
+            color: var(--accent-green);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-secondary);
+            margin: 28px 0 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .best-rip-section {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(26, 35, 50, 0.5) 100%);
+            border: 2px solid var(--accent-amber);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .best-rip-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .best-rip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .best-rip-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--accent-amber);
+        }
+
+        .best-rip-subtitle {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .best-rip-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .rip-card {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 10px;
+            padding: 14px;
+            border: 1px solid var(--border);
+            transition: border-color 0.2s;
+            position: relative;
+        }
+
+        .rip-card:first-child {
+            border-color: var(--accent-amber);
+        }
+
+        .rip-card .rip-rank {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.13);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .rip-card .rip-name {
+            font-weight: 700;
+            font-size: 15px;
+            margin-bottom: 2px;
+        }
+
+        .rip-card .rip-cat {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .rip-card .rip-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            font-size: 12px;
+        }
+
+        .rip-card .rip-label {
+            color: var(--text-secondary);
+        }
+
+        .rip-card .rip-val {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        .rip-card .rip-reason {
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--accent-green);
+            font-style: italic;
+            border-top: 1px solid var(--border);
+            padding-top: 6px;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .risk-steady {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+        }
+
+        .risk-moderate {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-amber);
+        }
+
+        .risk-volatile {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* Table & data sections */
+        .data-section {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 8px;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tbody tr:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .cat-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .cat-pokemon { background: #22c55e; color: #000; }
+        .cat-basketball { background: #f59e0b; color: #000; }
+        .cat-football { background: #ef4444; color: #fff; }
+        .cat-one-piece { background: #3b82f6; color: #fff; }
+        .cat-baseball { background: #a855f7; color: #fff; }
+        .cat-soccer { background: #06b6d4; color: #000; }
+        .cat-yu-gi-oh { background: #b45309; color: #fff; }
+
+        .discount-badge {
+            background: var(--accent-green);
+            color: #000;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Pull feed */
+        .pull-feed {
+            background: rgba(30, 41, 59, 0.3);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 16px;
+            max-height: 280px;
+            overflow-y: auto;
+            margin-bottom: 24px;
+        }
+
+        .pull-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+
+        .pull-item:hover {
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .pull-rarity {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .rarity-common { background: #94a3b8; }
+        .rarity-uncommon { background: #22c55e; }
+        .rarity-rare { background: #3b82f6; }
+        .rarity-epic { background: #a855f7; }
+        .rarity-legendary { background: #ef4444; }
+        .rarity-mythic { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+        .pull-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .pull-title {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pull-detail {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .pull-value {
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .pull-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+            width: 50px;
+            text-align: right;
+        }
+
+        .live-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Filter controls */
+        .filter-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 4px 12px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--accent-amber);
+        }
+
+        .filter-btn.active {
+            background: var(--accent-blue);
+            color: #fff;
+            border-color: var(--accent-blue);
+        }
+
+        /* Leaderboard & Prizes */
+        .lb-prizes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .tab-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .tab-btn {
+            padding: 5px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .tab-btn.active {
+            background: var(--accent-green);
+            color: #000;
+            border-color: var(--accent-green);
+            font-weight: 600;
+        }
+
+        tr.me-row {
+            background: rgba(30, 41, 59, 0.5);
+            border-left: 3px solid var(--accent-amber);
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .rank-1 { background: #fbbf24; color: #000; }
+        .rank-2 { background: #94a3b8; color: #000; }
+        .rank-3 { background: #d97706; color: #000; }
+
+        .prize-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+        }
+
+        .prize-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .prize-card .rank-title {
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .prize-card .prize-desc {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .p1 { color: #fbbf24; }
+        .p2 { color: #94a3b8; }
+        .p3 { color: #d97706; }
+        .p4 { color: #a855f7; }
+        .p5 { color: #22c55e; }
+
+        /* Market trends */
+        .market-trend-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .trend-card {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .trend-card .trend-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        .trend-card .trend-value {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 4px 0;
+        }
+
+        .trend-card .trend-sub {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* Misc */
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary);
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .refresh-btn.spinning {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .data-mode {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-grid { grid-template-columns: repeat(2, 1fr); }
+            .best-rip-cards { grid-template-columns: 1fr; }
+            .lb-prizes { grid-template-columns: 1fr; }
+            .prize-grid { grid-template-columns: repeat(3, 1fr); }
+            .market-trend-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+    </style>
 </head>
 <body>
-<div class="loading-bar" id="loadingBar"><div class="fill" id="loadingFill"></div></div>
-<div class="ts-badge" id="tsBadge">Loading...</div>
+    <div class="progress-bar" id="progressBar"></div>
 
-<h1>&#9889; Phygitals Tracker v2</h1>
-<p class="subtitle"><span id="dataMode">Loading...</span></p>
-
-<!-- Hero Stats -->
-<div class="hero" id="heroStats">
-  <div class="card"><div class="label">Weekly Rank</div><div class="value" id="hRank">&#8212;</div><div class="sub" id="hRankSub"></div></div>
-  <div class="card"><div class="label">Weekly Volume</div><div class="value" id="hVol">&#8212;</div><div class="sub">this week</div></div>
-  <div class="card"><div class="label">Weekly Points</div><div class="value" id="hPts">&#8212;</div><div class="sub" id="hPtsSub"></div></div>
-  <div class="card"><div class="label">Claw Pulls</div><div class="value" id="hPulls">&#8212;</div><div class="sub">this week</div></div>
-  <div class="card"><div class="label">Gap to Next</div><div class="value" id="hGapUp">&#8212;</div><div class="sub" id="hGapUpSub"></div></div>
-  <div class="card"><div class="label">Lead Over Below</div><div class="value" id="hGapDown">&#8212;</div><div class="sub" id="hGapDownSub"></div></div>
-</div>
-
-<!-- BEST RIP NOW RECOMMENDER -->
-<div class="section-header">&#128293; Best Rip Now &#8212; Algorithmic Recommendation</div>
-<div class="best-rip" id="bestRipSection">
-  <div class="best-rip-header">
-    <div>
-      <div class="best-rip-title">&#127919; Top Picks Right Now</div>
-      <div class="best-rip-subtitle">v4: Adjusted EV (real market sell rates), risk, liquidity, pull recency, freshness, activity &amp; LB strategy</div>
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-label"></span>
+            <span class="status-value" id="tsBadge">Loading...</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">SOL:</span>
+            <span class="status-value" id="solPriceBadge">...</span>
+        </div>
     </div>
-  </div>
-  <div class="best-rip-cards" id="bestRipCards">
-    <div style="color:#64748b;text-align:center;padding:20px">Loading recommendations...</div>
-  </div>
-</div>
 
-<!-- Enhanced Marketplace Arbitrage Tracker (v3) -->
-<div class="section-header">&#128176; Marketplace Arbitrage Feed &#8212; Best Value Cards Listed Now</div>
-<div class="arb-wrap">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-    <div style="font-size:.75rem;color:#94a3b8">Listed cards priced <strong style="color:#22c55e">30%+ below</strong> Card Ladder / eBay comps &#8212; sorted by discount</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <label style="font-size:.7rem;color:#64748b">Min discount:</label>
-      <select id="arbThreshold" onchange="arbMinDiscount=Number(this.value);renderArbitrage()" style="background:#0f1523;color:#e2e8f0;border:1px solid #334155;border-radius:4px;padding:2px 6px;font-size:.75rem">
-        <option value="20">20%</option>
-        <option value="30" selected>30%</option>
-        <option value="40">40%</option>
-        <option value="50">50%</option>
-      </select>
-      <span id="arbCount" style="font-size:.7rem;color:#f59e0b;font-weight:600"></span>
+    <div class="container">
+        <h1>Phygitals Tracker v5 <button class="refresh-btn" onclick="loadAll()">â</button></h1>
+        <div class="data-mode" id="dataMode">Initializing...</div>
+
+        <!-- Hero Stats -->
+        <div class="hero-grid" id="heroGrid"></div>
+
+        <!-- Best Rip Now -->
+        <div class="best-rip-section">
+            <div class="best-rip-header">
+                <div class="best-rip-title">Best Rip Now - v5 Algorithm</div>
+                <div class="best-rip-subtitle">10 weighted factors | median-based market intel</div>
+            </div>
+            <div class="best-rip-cards" id="bestRipCards"><div class="loading">Calculating...</div></div>
+        </div>
+
+        <!-- Market Trends -->
+        <div class="section-title">Market Trends (Median-Based)</div>
+        <div class="market-trend-grid" id="marketTrends"><div class="loading">Loading...</div></div>
+
+        <!-- Arbitrage Feed -->
+        <div class="section-title">Marketplace Arbitrage</div>
+        <div class="filter-row" id="arbFilters">
+            <button class="filter-btn active" onclick="setArbFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setArbFilter('Pokemon', this)">Pokemon</button>
+            <button class="filter-btn" onclick="setArbFilter('Basketball', this)">Basketball</button>
+            <button class="filter-btn" onclick="setArbFilter('Football', this)">Football</button>
+            <button class="filter-btn" onclick="setArbFilter('One Piece', this)">One Piece</button>
+            <button class="filter-btn" onclick="setArbFilter('Baseball', this)">Baseball</button>
+            <button class="filter-btn" onclick="setArbFilter('Soccer', this)">Soccer</button>
+            <button class="filter-btn" onclick="setArbFilter('Yu-Gi-Oh!', this)">Yu-Gi-Oh!</button>
+        </div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Card</th><th>Category</th><th>Price</th><th>FMV</th><th>Discount</th><th>Action</th></tr></thead>
+                <tbody id="arbBody"><tr><td colspan="6" class="loading">Scanning marketplace...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Pull Feed -->
+        <div class="section-title"><span class="live-dot"></span> Live Pull Feed</div>
+        <div class="pull-feed" id="pullFeed"><div class="loading">Loading...</div></div>
+
+        <!-- Mythic Drought Tracker -->
+        <div class="section-title">Mythic Drought Tracker</div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Pack</th><th>Mythic %</th><th>Expected</th><th>Actual 7D</th><th>Status</th></tr></thead>
+                <tbody id="droughtBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Whale Tracker -->
+        <div class="section-title">Whale Tracker - Top 10</div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Rank</th><th>Wallet</th><th>Volume</th><th>Packs</th><th>Points</th></tr></thead>
+                <tbody id="whaleBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- EV Freshness -->
+        <div class="section-title">EV Freshness Monitor</div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Pack</th><th>EV</th><th>Updated</th><th>Hours Ago</th><th>Status</th></tr></thead>
+                <tbody id="freshnessBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Leaderboard & Prizes -->
+        <div class="section-title">Leaderboard & Prizes</div>
+        <div class="lb-prizes">
+            <div class="data-section">
+                <div class="tab-row">
+                    <button class="tab-btn active" onclick="switchLBTab('weekly', this)">Weekly</button>
+                    <button class="tab-btn" onclick="switchLBTab('alltime', this)">All Time</button>
+                </div>
+                <div style="max-height:400px;overflow-y:auto">
+                    <table>
+                        <thead><tr><th>Rank</th><th>Wallet</th><th>Volume</th><th>Packs</th><th>Points</th></tr></thead>
+                        <tbody id="lbBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="data-section">
+                <div class="prize-grid" id="prizeGrid"><div class="loading">Loading...</div></div>
+            </div>
+        </div>
+
+        <!-- Pack EV Table -->
+        <div class="section-title">Pack EV Dashboard</div>
+        <div class="filter-row" id="packFilters">
+            <button class="filter-btn active" onclick="setPackFilter('all', this)">All</button>
+            <button class="filter-btn" onclick="setPackFilter('Pokemon', this)">Pokemon</button>
+            <button class="filter-btn" onclick="setPackFilter('Basketball', this)">Basketball</button>
+            <button class="filter-btn" onclick="setPackFilter('Football', this)">Football</button>
+            <button class="filter-btn" onclick="setPackFilter('One Piece', this)">One Piece</button>
+            <button class="filter-btn" onclick="setPackFilter('Baseball', this)">Baseball</button>
+        </div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Pack</th><th>Category</th><th>Price</th><th>EV</th><th>EV/Price</th><th>In Stock</th><th>7D Pulls</th></tr></thead>
+                <tbody id="packBody"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
+
+        <!-- Rarity Distribution -->
+        <div class="section-title">Rarity Distribution</div>
+        <div class="data-section">
+            <table>
+                <thead><tr><th>Pack</th><th>Rarity Breakdown</th></tr></thead>
+                <tbody id="rarityBody"><tr><td colspan="2" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
     </div>
-  </div>
-  <table class="arb-table">
-    <thead><tr><th>Card Name</th><th>Category</th><th>List Price</th><th>Card Ladder / eBay Comp</th><th>Discount</th><th>Savings</th><th>Last Sale</th><th>Source</th><th>Link</th></tr></thead>
-    <tbody id="arbBody"></tbody>
-  </table>
-</div>
-
-<!-- LIVE PULL FEED -->
-<div class="section-header"><span class="live-dot"></span> Live Pull Feed &#8212; Recent Activity</div>
-<div class="pull-feed">
-  <div class="pull-feed-scroll" id="pullFeedScroll">
-    <div class="pull-feed-empty" id="pullFeedEmpty">Loading recent pulls...</div>
-  </div>
-</div>
-
-<div style="display:none">
-<!-- Leaderboard & Prizes -->
-<div class="section-header">&#127941; Weekly Leaderboard & Prizes (Top 200)</div>
-<div class="lb-prizes">
-  <div class="lb-section">
-    <div class="tab-row">
-      <button class="tab-btn active" onclick="showLB('weekly')">Weekly</button>
-      <button class="tab-btn" onclick="showLB('alltime')">All-Time</button>
-    </div>
-    <table>
-      <thead><tr><th>#</th><th>Player</th><th>Volume</th><th>Pulls</th><th>Points</th></tr></thead>
-      <tbody id="lbBody"></tbody>
-    </table>
-  </div>
-  <div>
-    <div class="prize-grid" id="prizeGrid"></div>
-    <div id="myPrizeNote" style="margin-top:12px;padding:10px;background:#1e293b;border-radius:8px;font-size:.8rem;color:#94a3b8"></div>
-  </div>
-</div>
-
-</div>
-<!-- Mythic Drought Tracker -->
-<div class="section-header">&#127920; Mythic Drought Tracker &#8212; Which Machines Are Due?</div>
-<div class="drought-wrap">
-  <table class="drought-table">
-    <thead><tr><th>Pack</th><th>Category</th><th>Price</th><th>7D Pulls</th><th>Top Rarity</th><th>True Odds</th><th>Expected Hits</th><th>Drought Meter</th><th>Status</th><th>Last Mythic</th><th>Mythic Value</th></tr></thead>
-    <tbody id="droughtBody"></tbody>
-  </table>
-</div>
-
-<!-- Mythic Timing Heatmap (NEW v2) -->
-<div class="section-header">&#128200; Mythic Pull Timing Heatmap &#8212; When Do Mythics Hit?</div>
-<div class="heatmap-wrap">
-  <div style="margin-bottom:10px;font-size:.75rem;color:#94a3b8">Hours (UTC) vs Days of Week &#8212; brighter = more mythic/legendary pulls detected</div>
-  <div id="heatmapDayLabels" style="display:grid;grid-template-columns:60px 1fr;gap:4px;margin-bottom:4px">
-    <div></div>
-    <div style="display:grid;grid-template-columns:repeat(24,1fr);gap:2px;font-size:.6rem;color:#64748b;text-align:center" id="heatmapHourLabels"></div>
-  </div>
-  <div id="heatmapContainer"></div>
-  <div class="heatmap-legend" id="heatmapLegend">
-    <span>Fewer pulls</span>
-    <span class="swatch" style="background:#1a2332"></span>
-    <span class="swatch" style="background:#1e3a5f"></span>
-    <span class="swatch" style="background:#22c55e"></span>
-    <span class="swatch" style="background:#f59e0b"></span>
-    <span class="swatch" style="background:#ef4444"></span>
-    <span>More pulls</span>
-    <span style="margin-left:20px" id="heatmapTotal">Scanning sales data...</span>
-  </div>
-</div>
-
-<!-- Whale Movement Tracker (NEW v2) -->
-<div class="section-header">&#128011; Whale Movement Tracker &#8212; Where Are Top Players Pulling?</div>
-<div class="whale-wrap">
-  <div style="margin-bottom:10px;font-size:.75rem;color:#94a3b8">Top 10 wallets by weekly volume &#8212; showing which packs they're pulling from</div>
-  <table class="whale-table">
-    <thead><tr><th>#</th><th>Whale</th><th>Volume</th><th>Pulls</th><th>Avg Pull $</th><th>Points</th><th>Fav Pack (Est.)</th></tr></thead>
-    <tbody id="whaleBody"></tbody>
-  </table>
-</div>
-
-<!-- EV Freshness & Alt FMV section (NEW v2) -->
-<div class="section-header">&#9201; EV Freshness Monitor &#8212; Is the Listed EV Accurate?</div>
-<div class="pack-table-wrap">
-  <table class="pack-table">
-    <thead><tr><th>Pack</th><th>Price</th><th>EV</th><th>EV/Price</th><th>EV Updated</th><th>Freshness</th><th>Chase Card</th><th>Max/Mint</th></tr></thead>
-    <tbody id="evFreshnessBody"></tbody>
-  </table>
-</div>
-
-<!-- Pack EV Dashboard -->
-<div class="section-header">&#127920; Pack EV Dashboard &#8212; Sorted by EV/Price Ratio</div>
-<div class="pack-table-wrap">
-  <div class="pack-filters" id="packFilters"></div>
-  <table class="pack-table">
-    <thead><tr><th>Stock</th><th>Pack Name</th><th>Category</th><th>Price</th><th>EV</th><th>EV Range</th><th>EV/Price</th><th>Risk</th><th>Buyback</th><th>7D Pulls</th><th>Last Pull</th></tr></thead>
-    <tbody id="packBody"></tbody>
-  </table>
-</div>
-
-<!-- Rarity Distribution -->
-<div class="section-header">&#127922; Rarity Distribution by Pack &#8212; with True Odds & Value Ranges</div>
-<div class="pack-table-wrap">
-  <table class="rarity-table">
-    <thead><tr><th>Pack</th><th>Price</th><th>Common</th><th>Uncommon</th><th>Rare</th><th>Epic</th><th>Legendary/Mythic</th><th>True Mythic %</th></tr></thead>
-    <tbody id="rarityBody"></tbody>
-  </table>
-</div>
-
-<button class="refresh-btn" onclick="loadAll()" title="Refresh data">&#8635;</button>
 
 <script>
-// âââ CONFIG âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-const MY_WALLET = '9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVXvFWEi66R7872kr1';
-const API_BASE  = 'https://api.phygitals.com';
-const PROXY     = 'https://corsproxy.io/?';
-
-// âââ STATE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-let allPacks = [], weeklyLB = [], allTimeLB = [], prizes = [], marketplaceListings = [];
-let deepSalesData = [];  // v2: collected from deep pagination
-let arbListings = [];     // v3: marketplace listings with altFmv for arbitrage
-let mythicHits = {};
-let currentLBView = 'weekly';
-let currentFilter = 'all';
-let arbMinDiscount = 30;  // minimum % discount threshold for arbitrage feed
-let marketTrends = {};
-let solPrice = 0;
-let pokemonTrends = {};
-
-// âââ API FETCH ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-async function apiFetch(path) {
-  try {
-    const r = await fetch(API_BASE + path, { signal: AbortSignal.timeout(5000) });
-    if (r.ok) return r.json();
-  } catch(e) {}
-  const r = await fetch(PROXY + encodeURIComponent(API_BASE + path));
-  if (!r.ok) throw new Error('API error: ' + r.status);
-  return r.json();
-}
-
-function setLoading(pct) {
-  document.getElementById('loadingFill').style.width = pct + '%';
-}
-
-// âââ HELPERS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-const fmt$ = (v) => '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-const fmtK = (v) => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v.toString();
-const shortAddr = (a) => a ? a.substring(0,6) + '...' + a.substring(a.length-4) : '???';
-
-function getISOWeek() {
-  const now = new Date();
-  const jan1 = new Date(now.getFullYear(), 0, 1);
-  const days = Math.floor((now - jan1) / 86400000);
-  return now.getFullYear() + '-' + String(Math.ceil((days + jan1.getDay() + 1) / 7)).padStart(2,'0');
-}
-
-function timeAgo(input) {
-  const date = (input instanceof Date) ? input : new Date(input);
-  if (isNaN(date)) return '';
-  const s = Math.floor((Date.now() - date.getTime()) / 1000);
-  if (s < 60) return s + 's ago';
-  const m = Math.floor(s / 60);
-  if (m < 60) return m + 'm ago';
-  const h = Math.floor(m / 60);
-  if (h < 24) return h + 'h ago';
-  const d = Math.floor(h / 24);
-  return d + 'd ago';
-}
-
-// v2: Calculate TRUE odds from rarity weights (sum all weights, not assume /100)
-function calcTrueOdds(pack, rarityName) {
-  const rd = pack.rarity_distribution || [];
-  const totalWeight = rd.reduce((s, r) => s + (r.weight || 0), 0);
-  if (totalWeight === 0) return 0;
-  const tier = rd.find(r => (r.name || '').toLowerCase() === rarityName.toLowerCase());
-  return tier ? tier.weight / totalWeight : 0;
-}
-
-// âââ VARIANCE / RISK SCORE CALCULATOR ââââââââââââââââââââââââââââââââââââââââ
-function calcVariance(pack) {
-  const rarities = pack.rarity_distribution || [];
-  if (rarities.length === 0) return { score: 0, label: 'Unknown', class: 'risk-moderate' };
-
-  const price = Number(pack.mint_price) || 1;
-  const minEv = pack.min_ev || 0;
-  const maxEv = pack.max_ev || 0;
-  const spread = maxEv > 0 ? (maxEv - minEv) / price : 0;
-  const legendaryWeight = rarities.filter(r =>
-    ['legendary','mythic','epic'].includes(r.name?.toLowerCase())
-  ).reduce((s, r) => s + (r.weight || 0), 0) / 100;
-  const volatility = (spread * 0.6) + (legendaryWeight * 10 * 0.4);
-
-  if (volatility < 1.5) return { score: volatility, label: 'Steady', class: 'risk-steady', icon: '\uD83D\uDCCA' };
-  if (volatility < 4) return { score: volatility, label: 'Moderate', class: 'risk-moderate', icon: '\u2696\uFE0F' };
-  return { score: volatility, label: 'Volatile', class: 'risk-volatile', icon: '\uD83C\uDFB2' };
-}
-
-// v4: MARKET INTELLIGENCE
-function calcMarketTrends() {
-  const cats = {};
-  arbListings.forEach(item => {
-    const catMeta = Array.isArray(item.metadata) ? item.metadata.find(m => (m.trait_type || m.key) === 'Category') : null;
-    const cat = catMeta ? catMeta.value : 'Unknown';
-    if (!cats[cat]) cats[cat] = { listed: 0, ratios: [], belowFmv: 0 };
-    const c = cats[cat]; c.listed++;
-    const fmv = parseFloat(item.altFmv || 0);
-    const price = (item.price || 0) / 1e6;
-    if (fmv > 0 && price > 0) { c.ratios.push(price / fmv); if (price < fmv) c.belowFmv++; }
-  });
-  marketTrends = {};
-  Object.entries(cats).forEach(([cat, c]) => {
-    c.ratios.sort((a, b) => a - b);
-    const median = c.ratios.length > 0 ? c.ratios[Math.floor(c.ratios.length / 2)] : 0.85;
-    // Cap ratio between 0.5 and 1.2 to filter extreme outliers
-    const cappedMedian = Math.max(0.5, Math.min(1.2, median));
-    marketTrends[cat.toLowerCase()] = {
-      listedCount: c.listed,
-      sellThrough: c.ratios.length > 0 ? c.belowFmv / c.ratios.length : 0,
-      liquidity: Math.min(c.listed / 50, 1),
-      realFmvRatio: cappedMedian
-    };
-  });
-}
-async function fetchSOLPrice() {
-  try { const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd'); if (r.ok) { const d = await r.json(); solPrice = d.solana?.usd || 0; } } catch(e) {}
-}
-async function fetchPokemonTrends() {
-  try {
-    const sets = ['sv7','sv6','sv5','sv4','sv3','swsh12pt5','swsh12','swsh11'];
-    const r = await fetch('https://api.pokemontcg.io/v2/cards?q=(' + sets.map(s => 'set.id:' + s).join(' OR ') + ')&pageSize=20&select=name,set,cardmarket,tcgplayer&orderBy=-cardmarket.prices.trendPrice');
-    if (!r.ok) return;
-    const d = await r.json();
-    const st = {};
-    (d.data || []).forEach(card => {
-      const sn = card.set?.name; if (!sn) return;
-      if (!st[sn]) st[sn] = { totalAvg7: 0, totalAvg30: 0, count: 0 };
-      const cm = card.cardmarket?.prices;
-      if (cm && cm.avg7 && cm.avg30) { st[sn].totalAvg7 += cm.avg7; st[sn].totalAvg30 += cm.avg30; st[sn].count++; }
-    });
-    pokemonTrends = {};
-    Object.entries(st).forEach(([name, s]) => {
-      if (s.count > 0) { const a7 = s.totalAvg7/s.count, a30 = s.totalAvg30/s.count;
-        pokemonTrends[name] = { avg7: a7, avg30: a30, momentum: a30 > 0 ? ((a7-a30)/a30*100) : 0, direction: a7 > a30 ? 'up' : a7 < a30*0.95 ? 'down' : 'flat' };
-      }
-    });
-  } catch(e) {}
-}
-
-// âââ BEST RIP NOW ALGORITHM ââââââââââââââââââââââââââââââââââââââââââââââââââ
-function calcBestRips() {
-  if (!allPacks.length) return [];
-  calcMarketTrends();
-
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-  const gapToNext = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
-
-  return allPacks
-    .filter(p => p.in_stock && p.ev > 0)
-    .map(p => {
-      const price = Number(p.mint_price) || 1;
-      const evRatio = p.ev / price;
-      const variance = calcVariance(p);
-      const activity = Math.min((p.num_pulls_7d || 0) / 100, 1);
-      const buyback = p.buyback_percent || 0;
-
-      const evScore = Math.min(evRatio, 1.3) / 1.3;
-      const steadyScore = 1 - Math.min(variance.score / 6, 1);
-      const activityScore = activity;
-      const buybackScore = buyback;
-      const lbScore = (gapToNext > 0 && price <= gapToNext * 0.1) ? 1 : 0.5;
-      // v4: market intelligence scores
-      const cat = (p.category || '').toLowerCase();
-      const mkt = marketTrends[cat] || {};
-      const realFmvRatio = mkt.realFmvRatio || 0.85;
-      const adjustedEv = p.ev * realFmvRatio;
-      const adjustedEvRatio = adjustedEv / price;
-      const adjEvScore = Math.min(adjustedEvRatio, 1.3) / 1.3;
-      const evSpread = (p.max_ev && p.min_ev && p.ev > 0) ? (p.max_ev - p.min_ev) / p.ev : 1;
-      const spreadScore = 1 - Math.min(evSpread, 1);
-      let pullRecencyScore = 0.5;
-      if (p.last_pull) { const ms = (Date.now() - new Date(p.last_pull).getTime()) / 60000; pullRecencyScore = ms < 5 ? 1 : ms < 30 ? 0.9 : ms < 120 ? 0.7 : ms < 720 ? 0.4 : 0.2; }
-      const liquidityScore = mkt.liquidity || 0.3;
-      let freshnessScore = 0.3;
-      if (p.ev_updated_at) { const hrs = (Date.now() - new Date(p.ev_updated_at).getTime()) / 3600000; freshnessScore = hrs < 1 ? 1 : hrs < 6 ? 0.8 : hrs < 24 ? 0.5 : 0.2; }
-
-      const composite = (adjEvScore*0.30)+(evScore*0.10)+(steadyScore*0.12)+(activityScore*0.10)+(buybackScore*0.10)+(spreadScore*0.06)+(pullRecencyScore*0.06)+(liquidityScore*0.06)+(freshnessScore*0.05)+(lbScore*0.05);
-
-      let reasons = [];
-      if (adjustedEvRatio >= 1.0) reasons.push('\uD83D\uDCB0 Adj EV ' + (adjustedEvRatio*100).toFixed(0) + '%');
-      else if (evRatio >= 1.04) reasons.push('EV ' + (evRatio*100).toFixed(0) + '%');
-      if (realFmvRatio >= 0.92) reasons.push('\uD83D\uDFE2 Sells near FMV');
-      else if (realFmvRatio < 0.80) reasons.push('\uD83D\uDD34 ' + Math.round((1-realFmvRatio)*100) + '% below FMV');
-      if (variance.label === 'Steady') reasons.push('Low risk');
-      if (pullRecencyScore >= 0.9) reasons.push('\u26A1 Just pulled');
-      if (activity > 0.5) reasons.push('High activity');
-      if (buyback >= 0.9) reasons.push(Math.round(buyback*100) + '% buyback');
-      if (freshnessScore >= 0.8) reasons.push('\uD83D\uDD52 Fresh EV');
-      if (spreadScore >= 0.7) reasons.push('\uD83C\uDFAF Tight range');
-      if (liquidityScore >= 0.6) reasons.push('\uD83D\uDCCA Liquid mkt');
-
-      return { pack: p, composite, evRatio, adjustedEvRatio, variance, realFmvRatio, reasons: reasons.length ? reasons.join(' \u00B7 ') : 'Balanced pick' };
-    })
-    .sort((a, b) => b.composite - a.composite)
-    .slice(0, 3);
-}
-
-// âââ DEEP SALES SCANNER (v2) ââââââââââââââââââââââââââââââââââââââââââââââââ
-async function scanDeepSales(maxPages) {
-  maxPages = maxPages || 20;
-  const packById = {};
-  allPacks.forEach(p => { if (p.id) packById[String(p.id)] = p; });
-  let allSales = [];
-
-  for (let pg = 0; pg < maxPages; pg++) {
-    try {
-      const d = await apiFetch('/api/marketplace/sales?limit=10&page=' + pg);
-      const sales = d.sales || d || [];
-      if (!sales.length) break;
-      allSales = allSales.concat(sales);
-
-      // Extract mythic hits
-      sales.forEach(s => {
-        if (s.type !== 'CLAW' || !s.clawId) return;
-        const pack = packById[String(s.clawId)];
-        if (!pack || !pack.rarity_distribution) return;
-
-        // Check via ebayListing price or amount
-        const amount = s.amount ? s.amount / 1e6 : 0;
-        const mt = pack.rarity_distribution.find(x => x.name === 'Mythic' || x.name === 'Legendary');
-        if (!mt) return;
-
-        const ep = parseFloat(s.ebayListing?.data?.price?.value || 0);
-        const checkVal = ep || amount;
-
-        if (checkVal >= (mt.lower || mt.lower_value || 0) && (mt.lower || mt.lower_value || 0) > 0) {
-          const ex = mythicHits[String(s.clawId)];
-          if (!ex || new Date(s.time || s.createdAt) > new Date(ex.time)) {
-            mythicHits[String(s.clawId)] = {
-              card: s.ebayListing?.data?.title || s.nft?.name || 'Unknown',
-              price: checkVal,
-              time: s.time || s.createdAt,
-              from: s.from || s.buyer,
-              rarity: (s.nft?.rarity || '').toLowerCase()
-            };
-          }
+// ================= CONFIG ==================
+const MY_WALLET = '9Y7KcsQ8XvkAdFpTDQpeTQtqMxcVxvFWEi66R7872kr1';
+const API_BASE = 'https://api.phygitals.com';
+const COP               sellRate,
+                    liquidity: liquidityScore
+                };
+            }
         }
-      });
-    } catch(e) { break; }
-  }
-  deepSalesData = allSales;
-  return allSales;
-}
 
-// âââ LOAD ALL DATA âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-async function loadAll() {
-  const btn = document.querySelector('.refresh-btn');
-  btn.classList.add('spinning');
-  setLoading(10);
+        // ===== VARIANCE CALCULATION =====
+        function calcVariance(pack) {
+            const dist = pack.rarity_distribution || [];
+            let variance = 0;
+            let maxWeight = 0;
+            let topRarity = 'Common';
 
-  try {
-    // v2: expanded leaderboard to 200
-    const [packsData, wLB, aLB, prizeData, listingsData] = await Promise.all([
-      apiFetch('/api/vm/available?includeRepacks=true'),
-      apiFetch('/api/marketplace/leaderboard/weekly?pageSize=200'),
-      apiFetch('/api/marketplace/leaderboard?pageSize=200'),
-      apiFetch('/api/marketplace/prize-data?week=' + getISOWeek()),
-      apiFetch('/api/marketplace/sales?limit=50').catch(() => ({ sales: [] }))
-    ]);
-    setLoading(50);
+            dist.forEach(r => {
+                const weight = r.weight || 0;
+                variance += weight * weight;
+                if (weight > maxWeight) {
+                    maxWeight = weight;
+                    topRarity = r.name;
+                }
+            });
 
-    allPacks = packsData;
-    weeklyLB = wLB.leaderboard || [];
-    allTimeLB = aLB.leaderboard || [];
-    prizes = prizeData.prizes || [];
-    marketplaceListings = listingsData.sales || [];
+            const avgWeight = dist.length > 0 ? dist.reduce((s, r) => s + (r.weight || 0), 0) / dist.length : 0;
+            const score = Math.sqrt(variance / (dist.length || 1));
+            let label = 'Moderate';
+            if (score < 2) label = 'Steady';
+            else if (score > 4) label = 'Volatile';
 
-    // v2: deep scan for mythics (20 pages = 200 sales)
-    await scanDeepSales(20);
-    setLoading(70);
-
-    fetchSOLPrice(); fetchPokemonTrends().catch(()=>{});
-
-    // v3: fetch marketplace listings for arbitrage — ALL categories
-    arbListings = [];
-    const arbCategories = ['Pokemon','Basketball','Football','One Piece','Baseball','Soccer','Yu-Gi-Oh!'];
-    try {
-      for (const cat of arbCategories) {
-        const mc = encodeURIComponent(JSON.stringify({"Category":[cat]}));
-        for (let pg = 0; pg < 10; pg++) {
-          const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=50&page=' + pg + '&metadataConditions=' + mc + '&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
-          const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
-          if (!items.length) break;
-          arbListings.push(...items);
-          if (items.length < 50) break;
+            return { score, label, topRarity, maxWeight };
         }
-      }
-    } catch(e) { console.warn('Arb listings fetch error:', e); }
-    setLoading(80);
-
-    renderAll();
-
-    const ts = new Date().toISOString().replace('T',' ').substring(0,19) + ' UTC';
-    document.getElementById('tsBadge').textContent = 'Live \u00B7 ' + ts;
-    document.getElementById('tsBadge').className = 'ts-badge live';
-    document.getElementById('dataMode').textContent = 'Live data \u00B7 v4 market intelligence \u00B7 SOL $' + (solPrice || '?') + ' \u00B7 auto-refreshes';
-    setLoading(100);
-    setTimeout(() => setLoading(0), 500);
-  } catch(e) {
-    console.error('Load failed:', e);
-    document.getElementById('tsBadge').textContent = 'Error loading data';
-    document.getElementById('dataMode').textContent = 'Failed to load \u2014 click \u21BB to retry';
-    setLoading(0);
-  }
-  btn.classList.remove('spinning');
-}
-
-// âââ RENDER ALL ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderAll() {
-  renderHero();
-  renderBestRips();
-  renderDrought();
-  renderMythicHeatmap();
-  renderWhaleTracker();
-  renderEVFreshness();
-  renderPullFeed();
-  renderLeaderboard();
-  renderPrizes();
-  renderPacks();
-  renderArbitrage();
-  renderRarities();
-}
-
-// âââ HERO STATS ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderHero() {
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  if (myIdx === -1) return;
-  const me = weeklyLB[myIdx];
-  const vol = me.volume / 1e6;
-  const rank = myIdx + 1;
-  const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-  const below = myIdx < weeklyLB.length-1 ? weeklyLB[myIdx+1] : null;
-  const gapUp = above ? (above.volume - me.volume) / 1e6 : 0;
-  const gapDown = below ? (me.volume - below.volume) / 1e6 : 0;
-
-  document.getElementById('hRank').textContent = '#' + rank;
-  document.getElementById('hRankSub').textContent = 'of ' + weeklyLB.length + ' tracked';
-  document.getElementById('hVol').textContent = fmt$(vol);
-  document.getElementById('hPts').textContent = fmtK(me.points);
-  document.getElementById('hPtsSub').textContent = me.points.toLocaleString();
-  document.getElementById('hPulls').textContent = me.packs;
-  document.getElementById('hGapUp').textContent = fmt$(gapUp);
-  document.getElementById('hGapUpSub').textContent = above ? shortAddr(above.address) : '';
-  document.getElementById('hGapDown').textContent = fmt$(gapDown);
-  document.getElementById('hGapDownSub').textContent = below ? 'buffer above #' + (rank+1) : '';
-}
-
-// âââ BEST RIP NOW RECOMMENDER ââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderBestRips() {
-  const best = calcBestRips();
-  if (!best.length) {
-    document.getElementById('bestRipCards').innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">No packs in stock</div>';
-    return;
-  }
-
-  const medals = ['\uD83E\uDD47 #1 Pick', '\uD83E\uDD48 #2 Pick', '\uD83E\uDD49 #3 Pick'];
-  let html = '';
-  best.forEach((b, i) => {
-    const p = b.pack;
-    const price = Number(p.mint_price);
-    const catLabel = p.repack ? 'Creator' : (p.category || 'Other');
-    html += '<div class="rip-card">' +
-      '<div class="rip-rank">' + medals[i] + '</div>' +
-      '<div class="rip-name">' + p.name + '</div>' +
-      '<div class="rip-cat">' + catLabel + ' \u00B7 $' + price + '</div>' +
-      '<div class="rip-stats">' +
-        '<div class="rip-label">Raw EV</div><div class="rip-val">' + fmt$(p.ev) + ' (' + (b.evRatio*100).toFixed(0) + '%)</div>' +
-        '<div class="rip-label">Adj. EV</div><div class="rip-val" style="color:' + (b.adjustedEvRatio >= 1.0 ? '#22c55e' : b.adjustedEvRatio >= 0.9 ? '#f59e0b' : '#ef4444') + '">' + fmt$(p.ev * (b.realFmvRatio || 0.85)) + ' (' + ((b.adjustedEvRatio||0)*100).toFixed(0) + '%)</div>' +
-        '<div class="rip-label">Mkt Sell Rate</div><div class="rip-val" style="color:' + ((b.realFmvRatio||0) >= 0.92 ? '#22c55e' : (b.realFmvRatio||0) >= 0.83 ? '#f59e0b' : '#ef4444') + '">' + (b.realFmvRatio ? Math.round(b.realFmvRatio*100) + '% of FMV' : '\u2014') + '</div>' +
-        '<div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ' + b.variance.class + '">' + b.variance.icon + ' ' + b.variance.label + '</span></div>' +
-        '<div class="rip-label">7D Pulls</div><div class="rip-val">' + (p.num_pulls_7d || 0).toLocaleString() + '</div>' +
-        '<div class="rip-label">Last Pull</div><div class="rip-val">' + (p.last_pull ? timeAgo(p.last_pull) : '\u2014') + '</div>' +
-        '<div class="rip-label">Score</div><div class="rip-val" style="color:#f59e0b;font-weight:800">' + (b.composite*100).toFixed(0) + '/100</div>' +
-        '<div class="rip-label">Buyback</div><div class="rip-val">' + (p.buyback_percent ? Math.round(p.buyback_percent*100)+'%' : '\u2014') + '</div>' +
-      '</div>' +
-      '<div class="rip-reason">' + b.reasons + '</div>' +
-    '</div>';
-  });
-  document.getElementById('bestRipCards').innerHTML = html;
-}
-
-// âââ LIVE PULL FEED ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderPullFeed() {
-  const container = document.getElementById('pullFeedScroll');
-  const packById = {};
-  const packBySlug = {};
-  allPacks.forEach(p => {
-    if (p.id) packById[String(p.id)] = p.name;
-    if (p.slug) packBySlug[p.slug] = p.name;
-  });
-  function resolvePackName(clawId) {
-    if (!clawId) return 'Unknown Pack';
-    if (packById[String(clawId)]) return packById[String(clawId)];
-    for (const [slug, name] of Object.entries(packBySlug)) {
-      if (String(clawId).includes(slug) || slug.includes(String(clawId))) return name;
-    }
-    return String(clawId);
-  }
-  let sales = Array.isArray(marketplaceListings) ? marketplaceListings : [];
-  if (!sales.length) {
-    container.innerHTML = '<div class="pull-feed-empty">No recent activity data available</div>';
-    return;
-  }
-  sales.sort((a, b) => new Date(b.time || 0) - new Date(a.time || 0));
-  let html = '';
-  sales.slice(0, 30).forEach(item => {
-    const isClaw = item.type === 'CLAW';
-    const cardName = item.type === 'BUY' && item.nft && item.nft.name ? item.nft.name : null;
-    const packName = resolvePackName(item.clawId);
-    const displayName = cardName || packName;
-    const amount = item.amount ? item.amount / 1e6 : 0;
-    const timeStr = timeAgo(item.time);
-    const wallet = item.from ? shortAddr(item.from) : '';
-    let rarityClass = 'rarity-common';
-    const nftRarity = (item.nft?.rarity || '').toLowerCase();
-    if (nftRarity === 'mythic' || nftRarity === 'legendary') rarityClass = 'rarity-legendary';
-    else if (nftRarity === 'epic') rarityClass = 'rarity-epic';
-    else if (nftRarity === 'rare') rarityClass = 'rarity-rare';
-    else if (nftRarity === 'uncommon') rarityClass = 'rarity-uncommon';
-    else if (amount >= 100) rarityClass = 'rarity-legendary';
-    else if (amount >= 50) rarityClass = 'rarity-epic';
-    else if (amount >= 20) rarityClass = 'rarity-rare';
-    else if (amount >= 10) rarityClass = 'rarity-uncommon';
-
-    const typeIcon = isClaw ? '\uD83E\uDDE4' : '\uD83D\uDED2';
-    const typeLabel = isClaw ? 'Pulled from ' + packName : (cardName ? 'Marketplace buy' : 'Bought');
-    html += '<div class="pull-item">' +
-      '<div class="pull-rarity ' + rarityClass + '"></div>' +
-      '<div class="pull-info">' +
-        '<div class="pull-title">' + typeIcon + ' ' + displayName + '</div>' +
-        '<div class="pull-detail">' + typeLabel + (wallet ? ' \u00B7 ' + wallet : '') + '</div>' +
-      '</div>' +
-      '<div class="pull-value">' + fmt$(amount) + '</div>' +
-      '<div class="pull-time">' + timeStr + '</div>' +
-    '</div>';
-  });
-  container.innerHTML = html;
-}
-
-// Auto-refresh feed every 30s, full data every 2 minutes
-setInterval(async () => {
-  try {
-    const d = await apiFetch('/api/marketplace/sales?limit=50').catch(() => ({sales:[]}));
-    marketplaceListings = d.sales || [];
-    renderPullFeed();
-  } catch(e) {}
-}, 30000);
-setInterval(() => { loadAll(); }, 120000);
-
-// âââ DROUGHT TRACKER (v2: TRUE ODDS using total weight sum) ââââââââââââââââ
-function renderDrought() {
-  let packs = [...allPacks].filter(p => p.in_stock && (p.num_pulls_7d || 0) > 0);
-  const rows = packs.map(p => {
-    const rd = p.rarity_distribution || [];
-    const mythic = rd.find(r => r.name === 'Mythic');
-    const legendary = rd.find(r => r.name === 'Legendary');
-    const topRarity = mythic || legendary;
-    if (!topRarity) return null;
-
-    const pulls7d = p.num_pulls_7d || 0;
-    // v2: TRUE odds using total weight sum instead of dividing by 100
-    const totalWeight = rd.reduce((s, r) => s + (r.weight || 0), 0);
-    const odds = totalWeight > 0 ? topRarity.weight / totalWeight : 0;
-    const expectedHits = pulls7d * odds;
-    const probAtLeastOne = 1 - Math.pow(1 - odds, pulls7d);
-    const avgPullsPerHit = odds > 0 ? 1 / odds : Infinity;
-    const minVal = topRarity.lower || topRarity.lower_value || 0;
-    const maxVal = topRarity.upper || topRarity.upper_value || 0;
-    const mh = mythicHits[String(p.id)] || null;
-    return { pack: p, topRarity, pulls7d, odds, expectedHits, probAtLeastOne, avgPullsPerHit, minVal, maxVal, mythicHit: mh, totalWeight };
-  }).filter(Boolean);
-  rows.sort((a, b) => a.droughtRatio - b.droughtRatio || a.expectedHits - b.expectedHits);
-
-  const body = document.getElementById('droughtBody');
-  if (!body) return;
-  body.innerHTML = rows.map(r => {
-    const p = r.pack;
-    const cat = (p.category || p.categories?.[0] || 'Other').toUpperCase();
-    const catColors = {pokemon:'#f59e0b',creator:'#22c55e','one piece':'#3b82f6',baseball:'#ef4444',football:'#8b5cf6','yu-gi-oh!':'#ec4899',basketball:'#f97316',other:'#6b7280'};
-    const catColor = catColors[cat.toLowerCase()] || '#6b7280';
-    const pctMeter = Math.min(r.probAtLeastOne * 100, 100);
-    let meterColor = '#3b82f6';
-    if (pctMeter > 40) meterColor = '#22c55e';
-    if (pctMeter > 65) meterColor = '#f59e0b';
-    if (pctMeter > 85) meterColor = '#ef4444';
-    let status = '', statusClass = 'drought-normal';
-    if (r.expectedHits < 0.3) { status = '\u2744\uFE0F Cold'; statusClass = 'drought-normal'; }
-    else if (r.expectedHits < 1) { status = '\u26A1 Getting due'; statusClass = 'drought-due'; }
-    else if (r.expectedHits < 2) { status = '\u26A0\uFE0F Overdue'; statusClass = 'drought-overdue'; }
-    else { status = '\uD83D\uDD25 ' + r.expectedHits.toFixed(1) + 'x overdue'; statusClass = 'drought-overdue'; }
-    const isHot = r.expectedHits >= 2;
-    let mythicCell = '<td class="drought-no-data">No data</td>';
-    if (r.mythicHit) {
-      const card = r.mythicHit.card.length > 35 ? r.mythicHit.card.substring(0, 35) + '...' : r.mythicHit.card;
-      const ago = timeAgo(new Date(r.mythicHit.time));
-      mythicCell = '<td class="drought-mythic-hit">' + card + '<small>$' + Math.round(r.mythicHit.price).toLocaleString() + ' \u00B7 ' + ago + '</small></td>';
-    }
-    return '<tr' + (isHot ? ' class="drought-hot-tag"' : '') + '>' +
-      '<td style="font-weight:600">' + (p.name || '') + '</td>' +
-      '<td><span style="background:' + catColor + '22;color:' + catColor + ';padding:2px 8px;border-radius:8px;font-size:.75rem;font-weight:600">' + cat + '</span></td>' +
-      '<td>$' + Math.round(p.mint_price) + '</td>' +
-      '<td>' + r.pulls7d.toLocaleString() + '</td>' +
-      '<td style="color:' + (r.topRarity.color || '#f59e0b') + '">' + r.topRarity.name + '</td>' +
-      '<td><strong>' + (r.odds * 100).toFixed(2) + '%</strong> <small style="color:#9ca3af">(1 in ' + Math.round(1 / r.odds).toLocaleString() + ')</small><br><small style="color:#64748b">wt ' + r.topRarity.weight + '/' + r.totalWeight + '</small></td>' +
-      '<td><strong>' + r.expectedHits.toFixed(1) + '</strong><br><small style="color:#9ca3af">' + (r.probAtLeastOne * 100).toFixed(1) + '% chance hit</small></td>' +
-      '<td><div class="drought-meter"><div style="width:' + pctMeter.toFixed(1) + '%;background:' + meterColor + ';height:100%;border-radius:6px"></div></div></td>' +
-      '<td><span class="drought-badge ' + statusClass + '">' + status + '</span></td>' +
-      mythicCell +
-      '<td>$' + r.minVal.toLocaleString() + '\u2013$' + r.maxVal.toLocaleString() + '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-// âââ MYTHIC TIMING HEATMAP (v2 NEW) âââââââââââââââââââââââââââââââââââââââââ
-function renderMythicHeatmap() {
-  // Build hour/day grid from deep sales data
-  const grid = Array.from({length: 7}, () => Array(24).fill(0));
-  let mythicCount = 0;
-
-  // Use deep sales data to find high-value pulls
-  deepSalesData.forEach(s => {
-    if (s.type !== 'CLAW') return;
-    const amount = s.amount ? s.amount / 1e6 : 0;
-    const nftRarity = (s.nft?.rarity || '').toLowerCase();
-    // Count mythic/legendary pulls OR high-value pulls
-    if (nftRarity === 'mythic' || nftRarity === 'legendary' || amount >= 100) {
-      const dt = new Date(s.time || s.createdAt);
-      if (isNaN(dt)) return;
-      const day = dt.getUTCDay(); // 0=Sun
-      const hour = dt.getUTCHours();
-      grid[day][hour]++;
-      mythicCount++;
-    }
-  });
-
-  // Also check mythicHits from deep scan
-  Object.values(mythicHits).forEach(mh => {
-    if (!mh.time) return;
-    const dt = new Date(mh.time);
-    if (isNaN(dt)) return;
-    const day = dt.getUTCDay();
-    const hour = dt.getUTCHours();
-    grid[day][hour]++;
-    mythicCount++;
-  });
-
-  const maxVal = Math.max(...grid.flat(), 1);
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const colors = ['#1a2332', '#1e3a5f', '#22c55e', '#f59e0b', '#ef4444'];
-
-  // Hour labels
-  const hourLabelsEl = document.getElementById('heatmapHourLabels');
-  hourLabelsEl.innerHTML = Array.from({length:24}, (_,i) => '<div>' + i + '</div>').join('');
-
-  // Grid rows
-  let html = '';
-  days.forEach((dayName, dayIdx) => {
-    html += '<div style="display:grid;grid-template-columns:60px 1fr;gap:4px;margin-bottom:2px">';
-    html += '<div style="font-size:.7rem;color:#94a3b8;display:flex;align-items:center">' + dayName + '</div>';
-    html += '<div class="heatmap-grid">';
-    for (let h = 0; h < 24; h++) {
-      const val = grid[dayIdx][h];
-      const intensity = val / maxVal;
-      let bg;
-      if (val === 0) bg = colors[0];
-      else if (intensity < 0.25) bg = colors[1];
-      else if (intensity < 0.5) bg = colors[2];
-      else if (intensity < 0.75) bg = colors[3];
-      else bg = colors[4];
-      html += '<div class="heatmap-cell" style="background:' + bg + '" title="' + dayName + ' ' + h + ':00 UTC \u2014 ' + val + ' hits"></div>';
-    }
-    html += '</div></div>';
-  });
-
-  document.getElementById('heatmapContainer').innerHTML = html;
-  document.getElementById('heatmapTotal').textContent = mythicCount + ' mythic/legendary pulls detected from ' + deepSalesData.length + ' scanned sales';
-}
-
-// âââ WHALE MOVEMENT TRACKER (v2 NEW) ââââââââââââââââââââââââââââââââââââââââ
-function renderWhaleTracker() {
-  const body = document.getElementById('whaleBody');
-  if (!body) return;
-
-  // Top 10 from weekly leaderboard
-  const whales = weeklyLB.slice(0, 10);
-  if (!whales.length) {
-    body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#64748b">No leaderboard data</td></tr>';
-    return;
-  }
-
-  // Try to detect which packs whales are pulling from using sales data
-  const whaleAddresses = new Set(whales.map(w => w.address));
-  const whalePacks = {}; // address -> { packId: count }
-  deepSalesData.forEach(s => {
-    if (s.type !== 'CLAW') return;
-    const addr = s.from || s.buyer || '';
-    if (!whaleAddresses.has(addr)) return;
-    if (!whalePacks[addr]) whalePacks[addr] = {};
-    const pid = s.clawId || 'unknown';
-    whalePacks[addr][pid] = (whalePacks[addr][pid] || 0) + 1;
-  });
-
-  const packById = {};
-  allPacks.forEach(p => { if (p.id) packById[String(p.id)] = p.name; });
-
-  body.innerHTML = whales.map((w, i) => {
-    const vol = w.volume / 1e6;
-    const avgPull = w.packs > 0 ? vol / w.packs : 0;
-    const isMe = w.address === MY_WALLET;
-    const packs = whalePacks[w.address] || {};
-    const topPack = Object.entries(packs).sort((a,b) => b[1] - a[1])[0];
-    const topPackName = topPack ? (packById[String(topPack[0])] || topPack[0]) : '\u2014';
-    const topPackCount = topPack ? topPack[1] + ' pulls' : '';
-
-    return '<tr' + (isMe ? ' class="me-row"' : '') + '>' +
-      '<td><span class="rank-badge' + (i < 3 ? ' rank-' + (i+1) : '') + '">' + (i+1) + '</span></td>' +
-      '<td>' + (isMe ? '<strong style="color:#f59e0b">YOU</strong>' : shortAddr(w.address)) + '</td>' +
-      '<td>' + fmt$(vol) + '</td>' +
-      '<td>' + w.packs.toLocaleString() + '</td>' +
-      '<td>' + fmt$(avgPull) + '</td>' +
-      '<td class="points-col">' + w.points.toLocaleString() + '</td>' +
-      '<td>' + topPackName + (topPackCount ? '<br><small style="color:#64748b">' + topPackCount + '</small>' : '') + '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-// âââ EV FRESHNESS MONITOR (v2 NEW) ââââââââââââââââââââââââââââââââââââââââââ
-function renderEVFreshness() {
-  const body = document.getElementById('evFreshnessBody');
-  if (!body) return;
-
-  let packs = [...allPacks].filter(p => p.in_stock && p.ev > 0);
-  packs.sort((a, b) => {
-    const aHrs = a.ev_updated_at ? (Date.now() - new Date(a.ev_updated_at).getTime()) / 3600000 : 9999;
-    const bHrs = b.ev_updated_at ? (Date.now() - new Date(b.ev_updated_at).getTime()) / 3600000 : 9999;
-    return bHrs - aHrs; // stalest first
-  });
-
-  body.innerHTML = packs.map(p => {
-    const price = Number(p.mint_price);
-    const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : '0';
-    let freshClass = 'freshness-old';
-    let freshLabel = 'Unknown';
-    let hoursStale = '\u2014';
-
-    if (p.ev_updated_at) {
-      const hrs = (Date.now() - new Date(p.ev_updated_at).getTime()) / 3600000;
-      hoursStale = hrs < 1 ? Math.round(hrs * 60) + 'm ago' : hrs.toFixed(1) + 'h ago';
-      if (hrs < 6) { freshClass = 'freshness-fresh'; freshLabel = 'Fresh'; }
-      else if (hrs < 24) { freshClass = 'freshness-stale'; freshLabel = 'Stale'; }
-      else { freshClass = 'freshness-old'; freshLabel = 'OLD (' + Math.round(hrs/24) + 'd)'; }
-    }
-
-    // Chase card info
-    let chaseInfo = '\u2014';
-    const chase = p.chase || [];
-    if (Array.isArray(chase) && chase.length > 0) {
-      const topChase = chase[0];
-      chaseInfo = (topChase.name || topChase.title || 'Chase card') + (topChase.value ? ' ($' + topChase.value.toLocaleString() + ')' : '');
-      if (chaseInfo.length > 40) chaseInfo = chaseInfo.substring(0, 38) + '...';
-    }
-
-    return '<tr>' +
-      '<td style="font-weight:600">' + p.name + '</td>' +
-      '<td>$' + price + '</td>' +
-      '<td>$' + (p.ev?.toFixed(2) || '\u2014') + '</td>' +
-      '<td><strong>' + ratio + '%</strong></td>' +
-      '<td style="font-size:.75rem">' + hoursStale + '</td>' +
-      '<td><span class="' + freshClass + '" style="font-weight:600">' + freshLabel + '</span></td>' +
-      '<td style="font-size:.75rem;color:#94a3b8">' + chaseInfo + '</td>' +
-      '<td>' + (p.max_per_mint || '\u2014') + '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-// âââ MARKETPLACE ARBITRAGE FEED (v3 ENHANCED) ââââââââââââââââââââââââââââââââ
-function renderArbitrage() {
-  const body = document.getElementById('arbBody');
-  if (!body) return;
-
-  // Build arbitrage opportunities from live marketplace listings
-  let arbItems = [];
-
-  // Primary source: live marketplace listings with altFmv (Card Ladder / eBay comps)
-  arbListings.forEach(item => {
-    const altFmv = Number(item.altFmv || 0);
-    const priceRaw = Number(item.price || 0);
-    const priceUsd = priceRaw / 1e6;  // prices stored in micro-USD
-    if (!altFmv || altFmv <= 0 || !priceUsd || priceUsd <= 0.5 || priceUsd > 50000) return;
-    if (!item.listed) return;
-
-    const discount = ((altFmv - priceUsd) / altFmv * 100);
-    if (discount < arbMinDiscount) return;
-
-    const lastSaleUsd = Number(item.lastSale || 0) / 1e6;
-    const sourceUrl = item.altFmvSource || '';
-    const isAlt = sourceUrl.includes('alt.xyz');
-    const isEbay = sourceUrl.includes('ebay');
-    const sourceName = isAlt ? 'Card Ladder' : isEbay ? 'eBay' : (sourceUrl ? 'External' : '\u2014');
-
-    const catMeta = Array.isArray(item.metadata) ? item.metadata.find(m => (m.trait_type || m.key) === 'Category') : null;
-    const category = catMeta ? catMeta.value : '';
-
-    arbItems.push({
-      name: item.name || 'Unknown',
-      listPrice: priceUsd,
-      compPrice: altFmv,
-      discount: discount,
-      savings: altFmv - priceUsd,
-      lastSale: lastSaleUsd,
-      sourceName: sourceName,
-      sourceUrl: sourceUrl,
-      slug: item.slug || '',
-      address: item.address || '',
-      category: category
-    });
-  });
-
-  // Fallback: also check deep sales data for cards with altFmv vs fmv spreads
-  deepSalesData.forEach(s => {
-    const nft = s.nft || {};
-    const fmv = parseFloat(nft.fmv || 0);
-    const altFmv = parseFloat(nft.altFmv || 0);
-    if (!fmv || !altFmv || fmv <= 0 || altFmv <= 0) return;
-    const discount = ((altFmv - fmv) / altFmv * 100);
-    if (discount < arbMinDiscount) return;
-
-    const sourceUrl = nft.altFmvSource || '';
-    const isAlt = sourceUrl.includes('alt.xyz');
-    arbItems.push({
-      name: nft.name || s.name || 'Unknown',
-      listPrice: fmv,
-      compPrice: altFmv,
-      discount: discount,
-      savings: altFmv - fmv,
-      lastSale: 0,
-      sourceName: isAlt ? 'Card Ladder' : 'External',
-      sourceUrl: sourceUrl,
-      slug: '',
-      address: nft.universalNFTDataAddress || '',
-      category: ''
-    });
-  });
-
-  // Dedupe by name, keep best discount per card
-  const bestByName = {};
-  arbItems.forEach(a => {
-    if (!bestByName[a.name] || a.discount > bestByName[a.name].discount) {
-      bestByName[a.name] = a;
-    }
-  });
-  arbItems = Object.values(bestByName).sort((a, b) => b.discount - a.discount);
-
-  // Update count badge
-  const countEl = document.getElementById('arbCount');
-  if (countEl) countEl.textContent = arbItems.length + ' opportunities';
-
-  if (!arbItems.length) {
-    body.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#64748b;padding:20px">No cards found at ' + arbMinDiscount + '%+ discount. Try lowering the threshold or wait for new listings.</td></tr>';
-    return;
-  }
-
-  body.innerHTML = arbItems.slice(0, 50).map(a => {
-    // Discount color intensity based on how deep the discount is
-    const discColor = a.discount >= 50 ? '#22c55e' : a.discount >= 40 ? '#4ade80' : '#86efac';
-    const discBg = a.discount >= 50 ? 'rgba(34,197,94,.15)' : a.discount >= 40 ? 'rgba(74,222,128,.1)' : 'rgba(134,239,172,.07)';
-    const cardLink = a.address ? 'https://www.phygitals.com/card/' + a.address : '';
-    const sourceLink = a.sourceUrl ? '<a href="' + a.sourceUrl + '" target="_blank" style="color:#3b82f6;text-decoration:none;font-size:.7rem">' + a.sourceName + ' \u2197</a>' : '<span style="font-size:.7rem;color:#64748b">' + a.sourceName + '</span>';
-    const cardLinkHtml = cardLink ? '<a href="' + cardLink + '" target="_blank" style="color:#f59e0b;text-decoration:none;font-size:.7rem">Buy \u2197</a>' : '<span style="color:#64748b;font-size:.7rem">\u2014</span>';
-
-    return '<tr>' +
-      '<td style="font-weight:600;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + a.name + '">' + (a.name.length > 45 ? a.name.substring(0,43) + '...' : a.name) + '</td>' +
-      '<td style="color:#a78bfa;font-size:.75rem;white-space:nowrap">' + (a.category || '\u2014') + '</td>' +
-      '<td style="color:#e2e8f0;font-weight:700">' + fmt$(a.listPrice) + '</td>' +
-      '<td style="color:#94a3b8">' + fmt$(a.compPrice) + '</td>' +
-      '<td style="background:' + discBg + ';color:' + discColor + ';font-weight:700;text-align:center;border-radius:4px">' + a.discount.toFixed(1) + '% off</td>' +
-      '<td style="color:#22c55e;font-weight:600">' + fmt$(a.savings) + '</td>' +
-      '<td style="color:#64748b;font-size:.8rem">' + (a.lastSale > 0 ? fmt$(a.lastSale) : '\u2014') + '</td>' +
-      '<td>' + sourceLink + '</td>' +
-      '<td>' + cardLinkHtml + '</td>' +
-    '</tr>';
-  }).join('');
-}
-
-// âââ LEADERBOARD âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function showLB(view) {
-  currentLBView = view;
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
-  renderLeaderboard();
-}
-
-function renderLeaderboard() {
-  const data = currentLBView === 'weekly' ? weeklyLB : allTimeLB;
-  let html = '';
-  data.forEach((e, i) => {
-    const rank = i + 1;
-    const isMe = e.address === MY_WALLET;
-    const vol = e.volume / 1e6;
-    const name = isMe ? 'YOU' : shortAddr(e.address);
-    const rankClass = rank <= 3 ? ' rank-' + rank : '';
-    html += '<tr class="' + (isMe ? 'me-row' : '') + '">' +
-      '<td><span class="rank-badge' + rankClass + '">' + rank + '</span></td>' +
-      '<td><strong>' + name + '</strong></td>' +
-      '<td>' + fmt$(vol) + '</td>' +
-      '<td>' + e.packs + '</td>' +
-      '<td class="points-col">' + e.points.toLocaleString() + '</td>' +
-    '</tr>';
-  });
-  document.getElementById('lbBody').innerHTML = html;
-}
-
-// âââ PRIZES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderPrizes() {
-  const colors = ['p1','p2','p3','p4','p5','p6','p7','p8','p9','p10'];
-  let html = '';
-  prizes.forEach((p, i) => {
-    html += '<div class="prize-card">' +
-      '<div class="rank-title ' + (colors[i] || 'p10') + '">' + p.rank + '</div>' +
-      '<div class="prize-desc">' + p.description + '</div>' +
-    '</div>';
-  });
-  document.getElementById('prizeGrid').innerHTML = html;
-
-  const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-  if (myIdx !== -1) {
-    const rank = myIdx + 1;
-    const myPrize = prizes.find(p => p.rank === rank + (['st','nd','rd'][rank-1] || 'th'));
-    const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
-    const gapUp = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
-    const abovePrize = rank > 1 ? prizes[rank-2] : null;
-    let note = '\uD83C\uDFAF Your position: <strong>#' + rank + '</strong>';
-    if (myPrize) note += ' \u2014 ' + myPrize.description;
-    if (abovePrize && gapUp > 0) note += '<br>Climb ' + fmt$(gapUp) + ' to reach #' + (rank-1) + ' \u2192 unlock ' + abovePrize.description;
-    document.getElementById('myPrizeNote').innerHTML = note;
-  }
-}
-
-// âââ PACK EV TABLE ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-function renderPackFilters() {
-  const cats = ['all', ...new Set(allPacks.map(p => p.repack ? 'creator' : (p.category || 'other')))];
-  let html = '';
-  cats.forEach(c => {
-    const label = c === 'all' ? 'All Packs' : c === 'creator' ? '\uD83C\uDFA8 Creator' : c.charAt(0).toUpperCase() + c.slice(1);
-    const count = c === 'all' ? allPacks.length :
-                  c === 'creator' ? allPacks.filter(p=>p.repack).length :
-                  allPacks.filter(p=>!p.repack && (p.category||'other')===c).length;
-    html += '<button class="filter-btn ' + (c===currentFilter?'active':'') + '" onclick="filterPacks(\'' + c + '\')">' + label + ' (' + count + ')</button>';
-  });
-  document.getElementById('packFilters').innerHTML = html;
-}
-
-function filterPacks(cat) {
-  currentFilter = cat;
-  renderPacks();
-}
-
-function renderPacks() {
-  renderPackFilters();
-  let packs = [...allPacks];
-  if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
-  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
-
-  packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
-
-  let html = '';
-  packs.forEach(p => {
-    const price = Number(p.mint_price);
-    const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : 0;
-    const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
-    const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-').toLowerCase();
-    const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : (p.category || 'Other');
-    const packLabel = p.repack ? p.name + ' <span style="color:#94a3b8;font-size:.7rem">by ' + (p.creator_profile?.username || '?') + '</span>' : p.name;
-    const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '\u2014';
-    const lastPull = p.last_pull ? p.last_pull.substring(0,10) : '\u2014';
-    const risk = calcVariance(p);
-
-    html += '<tr>' +
-      '<td><span class="stock-dot ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"></span></td>' +
-      '<td>' + packLabel + '</td>' +
-      '<td><span class="cat-badge ' + catClass + '">' + catLabel + '</span></td>' +
-      '<td>$' + price + '</td>' +
-      '<td><strong>$' + (p.ev?.toFixed(2) || '\u2014') + '</strong></td>' +
-      '<td>$' + (p.min_ev?.toFixed(1) || '?') + '\u2013$' + (p.max_ev?.toFixed(0) || '?') + '</td>' +
-      '<td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ' + evClass + '" style="width:' + Math.min(ratio, 120)*0.6 + 'px"></div><strong>' + ratio + '%</strong></div></td>' +
-      '<td><span class="risk-badge ' + risk.class + '">' + risk.icon + ' ' + risk.label + '</span></td>' +
-      '<td>' + buyback + '</td>' +
-      '<td>' + (p.num_pulls_7d || 0).toLocaleString() + '</td>' +
-      '<td>' + lastPull + '</td>' +
-    '</tr>';
-  });
-  document.getElementById('packBody').innerHTML = html;
-}
-
-// âââ RARITY TABLE (v2: with TRUE ODDS column) âââââââââââââââââââââââââââââââ
-function renderRarities() {
-  let packs = [...allPacks];
-  if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
-  else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
-
-  packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
-
-  let html = '';
-  packs.forEach(p => {
-    const rarities = p.rarity_distribution || [];
-    const totalWeight = rarities.reduce((s, r) => s + (r.weight || 0), 0);
-
-    function getRarityInfo(name) {
-      const r = rarities.find(rd => rd.name?.toLowerCase() === name.toLowerCase());
-      if (!r) return { weight: '\u2014', valueRange: '', trueOdds: '' };
-      const pct = totalWeight > 0 ? (r.weight / totalWeight * 100).toFixed(1) : '?';
-      const weight = pct + '%';
-      const minVal = r.lower || r.lower_value || r.min_value || 0;
-      const maxVal = r.upper || r.upper_value || r.max_value || 0;
-      const valStr = minVal > 0 ? '$' + minVal.toFixed(0) + '\u2013$' + maxVal.toFixed(0) : '';
-      return { weight, valueRange: valStr, trueOdds: pct };
-    }
-
-    const common = getRarityInfo('Common');
-    const uncommon = getRarityInfo('Uncommon');
-    const rare = getRarityInfo('Rare');
-    const epic = getRarityInfo('Epic');
-    const legendary = getRarityInfo('Legendary');
-    const mythic = getRarityInfo('Mythic');
-    const legMythic = mythic.weight !== '\u2014' ? mythic : legendary;
-    const trueMythicPct = legMythic.trueOdds || '\u2014';
-
-    const label = p.repack
-      ? p.name + ' <span style="color:#94a3b8">(' + (p.creator_profile?.username || 'creator') + ')</span>'
-      : p.name + ' <span style="color:#94a3b8">(' + (p.category || 'Other') + ')</span>';
-
-    html += '<tr>' +
-      '<td>' + label + '</td>' +
-      '<td>$' + Number(p.mint_price) + '</td>' +
-      '<td style="color:#94a3b8">' + common.weight + '<span class="rarity-val-range">' + common.valueRange + '</span></td>' +
-      '<td style="color:#22c55e">' + uncommon.weight + '<span class="rarity-val-range">' + uncommon.valueRange + '</span></td>' +
-      '<td style="color:#3b82f6">' + rare.weight + '<span class="rarity-val-range">' + rare.valueRange + '</span></td>' +
-      '<td style="color:#a855f7">' + epic.weight + '<span class="rarity-val-range">' + epic.valueRange + '</span></td>' +
-      '<td style="color:#ef4444">' + legMythic.weight + '<span class="rarity-val-range">' + legMythic.valueRange + '</span></td>' +
-      '<td style="color:#f59e0b;font-weight:700">' + trueMythicPct + '%</td>' +
-    '</tr>';
-  });
-  document.getElementById('rarityBody').innerHTML = html;
-}
-
-// âââ INIT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
-loadAll();
-</script>
+
+        // ===== PACK SCORING ALGORITHM (ALL 10 WEIGHTED FACTORS) =====
+        function calcBestRips() {
+            if (!allPacks.length) return [];
+
+            const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+            if (myIdx === -1) return [];
+
+            const me = weeklyLB[myIdx];
+            const above = myIdx > 0 ? weeklyLB[myIdx - 1] : null;
+            const gapToNext = above ? (above.volume - me.volume) / 1e6 : 0;
+
+            calcMarketTrends();
+
+            return allPacks
+                .filter(p => p.in_stock && p.ev > 0)
+                .map(p => {
+                    const price = Number(p.mint_price) || 1;
+                    const evRatio = p.ev / price;
+                    const variance = calcVariance(p);
+                    const activity = Math.min((p.num_pulls_7d || 0) / 100, 1);
+                    const buyback = p.buyback_percent || 0;
+
+                    // Base scores
+                    const evScore = Math.min(evRatio, 1.3) / 1.3;
+                    const steadyScore = 1 - Math.min(variance.score / 6, 1);
+                    const activityScore = activity;
+                    const buybackScore = buyback;
+                    const lbScore = (gapToNext > 0 && price <= gapToNext * 0.1) ? 1 : 0.5;
+
+                    // Market intelligence scores
+                    const cat = (p.category || '').toLowerCase();
+                    const mkt = marketTrends[cat] || {};
+
+                    // 1. Real EV adjustment
+                    const realFmvRatio = mkt.realFmvRatio || 0.85;
+                    const adjustedEv = p.ev * realFmvRatio;
+                    const adjustedEvRatio = adjustedEv / price;
+                    const adjEvScore = Math.min(adjustedEvRatio, 1.3) / 1.3;
+
+                    // 2. EV spread tightness
+                    const evSpread = (p.max_ev && p.min_ev && p.ev > 0) ? (p.max_ev - p.min_ev) / p.ev : 1;
+                    const spreadScore = 1 - Math.min(evSpread, 1);
+
+                    // 3. Pull recency
+                    let pullRecencyScore = 0.5;
+                    if (p.last_pull) {
+                        const minsSincePull = (Date.now() - new Date(p.last_pull).getTime()) / 60000;
+                        if (minsSincePull < 5) pullRecencyScore = 1.0;
+                        else if (minsSincePull < 30) pullRecencyScore = 0.9;
+                        else if (minsSincePull < 120) pullRecencyScore = 0.7;
+                        else if (minsSincePull < 720) pullRecencyScore = 0.4;
+                    }
+
+                    // 4. Market liquidity (FIXED: use real marketplace data, not Math.random())
+                    const liquidityScore = mkt.liquidity || 0.3;
+
+                    // 5. EV freshness
+                    let freshnessScore = 0.2;
+                    if (p.ev_updated_at) {
+                        const hrs = hoursAgo(p.ev_updated_at);
+                        if (hrs < 1) freshnessScore = 1.0;
+                        else if (hrs < 6) freshnessScore = 0.8;
+                        else if (hrs < 24) freshnessScore = 0.5;
+                    }
+
+                    // Composite with all 10 weighted factors
+                    const composite =
+                        (adjEvScore * 0.30) +
+                        (evScore * 0.10) +
+                        (steadyScore * 0.12) +
+                        (activityScore * 0.10) +
+                        (buybackScore * 0.10) +
+                        (spreadScore * 0.06) +
+                        (pullRecencyScore * 0.06) +
+                        (liquidityScore * 0.06) +
+                        (freshnessScore * 0.05) +
+                        (lbScore * 0.05);
+
+                    // Reasons
+                    let reasons = [];
+                    if (adjustedEvRatio >= 1.0) reasons.push('Adj. EV ' + (adjustedEvRatio * 100).toFixed(0) + '%');
+                    else if (evRatio >= 1.04) reasons.push('EV ' + (evRatio * 100).toFixed(0) + '%');
+                    if (realFmvRatio >= 0.92) reasons.push('Cards sell near FMV');
+                    else if (realFmvRatio < 0.80) reasons.push('Cards sell ' + Math.round((1 - realFmvRatio) * 100) + '% below FMV');
+                    if (variance.label === 'Steady') reasons.push('Low risk');
+                    if (pullRecencyScore >= 0.9) reasons.push('Just pulled');
+                    if (activity > 0.5) reasons.push('High activity');
+                    if (buyback >= 0.9) reasons.push(Math.round(buyback * 100) + '% buyback');
+                    if (freshnessScore >= 0.8) reasons.push('Fresh EV');
+                    if (spreadScore >= 0.7) reasons.push('Tight EV range');
+                    if (liquidityScore >= 0.6) reasons.push('Liquid market');
+
+                    return {
+                        pack: p, composite, evRatio, adjustedEvRatio, variance,
+                        realFmvRatio, spreadScore, pullRecencyScore, liquidityScore, freshnessScore,
+                        reasons: reasons.length ? reasons.join(' Â· ') : 'Balanced pick'
+                    };
+                })
+                .sort((a, b) => b.composite - a.composite)
+                .slice(0, 3);
+        }
+
+        // ===== DEEP SALES SCAN =====
+        async function scanDeepSales(maxPages = 20) {
+            const packById = {};
+            allPacks.forEach(p => { if (p.id) packById[String(p.id)] = p; });
+            deepSalesData = [];
+
+            for (let pg = 0; pg < maxPages; pg++) {
+                try {
+                    const d = await apiFetch('/api/marketplace/sales?limit=10&page=' + pg);
+                    const sales = d.sales || d || [];
+                    if (!sales.length) break;
+                    deepSalesData = deepSalesData.concat(sales);
+
+                    sales.forEach(s => {
+                        if (s.type !== 'CLAW' || !s.clawId) return;
+                        const pack = packById[String(s.clawId)];
+                        if (!pack || !pack.rarity_distribution) return;
+
+                        const amount = s.amount ? s.amount / 1e6 : 0;
+                        const mt = pack.rarity_distribution.find(x => (x.name || '').toLowerCase() === 'mythic' || (x.name || '').toLowerCase() === 'legendary');
+                        if (!mt) return;
+
+                        const ep = parseFloat(s.ebayListing?.data?.price?.value || 0);
+                        const checkVal = ep || amount;
+
+                        if (checkVal >= (mt.lower || mt.lower_value || 0) && (mt.lower || mt.lower_value || 0) > 0) {
+                            const ex = mythicHits[String(s.clawId)];
+                            if (!ex || new Date(s.time || s.createdAt) > new Date(ex.time)) {
+                                mythicHits[String(s.clawId)] = {
+                                    card: s.ebayListing?.data?.title || s.nft?.name || 'Unknown',
+                                    price: checkVal,
+                                    time: s.time || s.createdAt
+                                };
+                            }
+                        }
+                    });
+
+                    if (sales.length < 10) break;
+                } catch (e) {
+                    console.warn('Deep sales page ' + pg + ' failed:', e);
+                    break;
+                }
+            }
+        }
+
+        // ===== MARKETPLACE FETCHING (PARALLEL CATEGORIES, SEQUENTIAL PAGES WITHIN EACH) =====
+        async function fetchMarketplaceListings() {
+            window.arbListings = [];
+            const categories = ['Pokemon', 'Basketball', 'Football', 'One Piece', 'Baseball', 'Soccer', 'Yu-Gi-Oh!', 'Creator'];
+
+            // Fetch categories in parallel, but pages within each category sequentially
+            const categoryPromises = categories.map(async (cat) => {
+                const mc = encodeURIComponent(JSON.stringify({ "Category": [cat] }));
+                const catListings = [];
+
+                for (let pg = 0; pg < 10; pg++) {
+                    try {
+                        const arbResp = await apiFetch('/api/marketplace/marketplace-listings?searchTerm=&sortBy=recently-listed&itemsPerPage=50&page=' + pg + '&metadataConditions=' + mc + '&priceRange=%5Bnull%2Cnull%5D&fmvRange=%5Bnull%2Cnull%5D&listedStatus=listed&collectionAddresses=%5B%5D');
+                        const items = Array.isArray(arbResp) ? arbResp : (arbResp.items || arbResp.listings || []);
+                        if (!items.length) break;
+                        catListings.push(...items);
+                        if (items.length < 50) break;
+                    } catch (e) {
+                        console.warn('Marketplace page ' + pg + ' for ' + cat + ' failed:', e);
+                        break;
+                    }
+                }
+
+                return catListings;
+            });
+
+            try {
+                const results = await Promise.all(categoryPromises);
+                results.forEach(listings => {
+                    window.arbListings.push(...listings);
+                });
+            } catch (e) {
+                console.warn('Marketplace fetch error:', e);
+            }
+        }
+
+        // ===== DATA LOADING =====
+        async function loadData() {
+            try {
+                setProgress(10);
+
+                // Fetch packs and leaderboards in parallel
+                const [packsResp, weeklyResp, allTimeResp] = await Promise.all([
+                    apiFetch('/api/marketplace/packs').catch(() => ({ packs: [] })),
+                    apiFetch('/api/marketplace/leaderboard/weekly?pageSize=200').catch(() => ({ leaderboard: [] })),
+                    apiFetch('/api/marketplace/leaderboard?pageSize=200').catch(() => ({ leaderboard: [] }))
+                ]);
+
+                allPacks = packsResp.packs || packsResp || [];
+                weeklyLB = weeklyResp.leaderboard || weeklyResp || [];
+                allTimeLB = allTimeResp.leaderboard || allTimeResp || [];
+
+                setProgress(30);
+
+                // Fetch prizes (FIXED: now fetches prize data)
+                try {
+                    const weekNum = getISOWeek();
+                    const prizeResp = await apiFetch('/api/marketplace/prize-data?week=' + weekNum);
+                    prizes = prizeResp.prizes || prizeResp || [];
+                } catch (e) {
+                    console.warn('Prize fetch failed:', e);
+                }
+
+                setProgress(50);
+
+                // Fetch marketplace listings (categories in parallel, pages sequential)
+                await fetchMarketplaceListings();
+
+                setProgress(70);
+
+                // Fetch SOL price
+                await fetchSOLPrice();
+
+                // Deep sales scan
+                await scanDeepSales(20);
+
+                setProgress(90);
+
+                renderAll();
+
+                lastRefresh = new Date();
+                updateStatus();
+                setProgress(100);
+                setTimeout(() => setProgress(0), 500);
+            } catch (e) {
+                console.error('Load failed:', e);
+                updateStatus();
+            }
+        }
+
+        // ===== RENDERING =====
+        function setProgress(pct) {
+            document.getElementById('progressBar').style.width = pct + '%';
+            if (pct === 100) document.getElementById('progressBar').classList.add('complete');
+            else document.getElementById('progressBar').classList.remove('complete');
+        }
+
+        function updateStatus() {
+            const now = new Date();
+            do#ument.getElementById('statusTime').textContent = now.toLocaleTimeString().substring(0, 5);
+            document.getElementById('statusSOL').textContent = solPrice ? '$' + solPrice.toFixed(2) : '$0.00';
+            const mins = Math.floor((Date.now() - lastRefresh.getTime()) / 60000);
+            document.getElementById('statusData').textContent = mins > 0 ? mins + 'm ago' : 'now';
+        }
+
+        function renderAll() {
+            renderHero();
+            renderBestRips();
+            renderMarketTrends();
+            renderPullFeed();
+            renderLeaderboard();
+            renderPrizes();
+            renderPacks();
+        }
+
+        function renderHero() {
+            const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+            if (myIdx === -1) {
+                document.getElementById('heroStats').innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-secondary); padding: 40px;">Wallet not found in leaderboard</div>';
+                return;
+            }
+
+            const me = weeklyLB[myIdx];
+            const above = myIdx > 0 ? weeklyLB[myIdx - 1] : null;
+            const below = myIdx < weeklyLB.length - 1 ? weeklyLB[myIdx + 1] : null;
+
+            // FIXED: Gap to Next = gap to rank ABOVE (#myIdx), Lead Over Below = gap to rank BELOW (#myIdx+2)
+            const gapUp = above ? (above.volume - me.volume) / 1e6 : 0;
+            const gapDown = below ? (me.volume - below.volume) / 1e6 : 0;
+
+            const html = `
+                <div class="hero-card">
+                    <div class="label">Rank</div>
+                    <div class="value">#${myIdx + 1}</div>
+                    <div class="sub">of ${weeklyLB.length}</div>
+                </div>
+                <div class="hero-card">
+                    <div class="label">Volume</div>
+                    <div class="value">${fmt$(me.volume / 1e6)}</div>
+                    <div class="sub">This week</div>
+                </div>
+                <div class="hero-card">
+                    <div class="label">Points</div>
+                    <div class="value">${(me.points || 0).toLocaleString()}</div>
+                    <div class="sub">Leaderboard</div>
+                </div>
+                <div class="hero-card">
+                    <div class="label">Packs</div>
+                    <div class="value">${(me.num_packs || 0).toLocaleString()}</div>
+                    <div class="sub">Pulled</div>
+                </div>
+                <div class="hero-card">
+                    <div class="label">Gap to #${myIdx}</div>
+                    <div class="value">${fmt$(gapUp)}</div>
+                    <div class="sub">${above ? 'to ' + shortAddr(above.address) : 'N/A'}</div>
+                </div>
+                <div class="hero-card">
+                    <div class="label">Lead over #${myIdx + 2}</div>
+                    <div class="value">${fmt$(gapDown)}</div>
+                    <div class="sub">${below ? 'over ' + shortAddr(below.address) : 'N/A'}</div>
+                </div>
+            `;
+
+            document.getElementById('heroStats').innerHTML = html;
+        }
+
+        function renderBestRips() {
+            const rips = calcBestRips();
+            if (!rips.length) {
+                document.getElementById('bestRipSection').innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No packs available</p>';
+                return;
+            }
+
+            const cardsHtml = rips.map((r, i) => {
+                const p = r.pack;
+                return `
+                    <div class="rip-card">
+                        <div class="rip-rank">#${i + 1}</div>
+                        <div class="rip-name">${p.name}</div>
+                        <div class="rip-cat">${p.category || 'Unknown'}</div>
+                        <div class="rip-stats">
+                            <div><span class="rip-label">EV Ratio</span></div>
+                            <div><span class="rip-val">${(r.adjustedEvRatio * 100).toFixed(0)}%</span></div>
+                            <div><span class="rip-label">Liquidity</span></div>
+                            <div><span class="rip-val">${(r.liquidityScore * 100).toFixed(0)}%</span></div>
+                            <div><span class="rip-label">Recency</span></div>
+                            <div><span class="rip-val">${(r.pullRecencyScore * 100).toFixed(0)}%</span></div>
+                            <div><span class="rip-label">Composite</span></div>
+                            <div><span class="rip-val">${(r.composite * 100).toFixed(0)}%</span></div>
+                        </div>
+                        <div class="rip-reason">${r.reasons}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('bestRipSection').innerHTML = `
+                <div class="best-rip-header">
+                    <div>
+                        <div class="best-rip-title">Best Rip Now</div>
+                        <div class="best-rip-subtitle">Top 3 by composite score: Adjusted EV, risk, liquidity, recency, freshness</div>
+                    </div>
+                </div>
+                <div class="best-rip-cards">${cardsHtml}</div>
+            `;
+        }
+
+        function renderMarketTrends() {
+            const container = document.getElementById('marketTrends');
+            if (!Object.keys(marketTrends).length) {
+                container.innerHTML = '<div style="color: var(--text-secondary);">No market data</div>';
+                return;
+            }
+
+            const html = Object.entries(marketTrends).map(([cat, mkt]) => `
+                <div class="trend-card">
+                    <div class="cat-name">${cat.charAt(0).toUpperCase() + cat.slice(1)}</div>
+                    <div class="metric">
+                        <span>Listings:</span>
+                        <span class="metric-val">${mkt.listingCount || 0}</span>
+                    </div>
+                    <div class="metric">
+                        <span>FMV Ratio:</span>
+                        <span class="metric-val">${((mkt.realFmvRatio || 0) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>Liquidity:</span>
+                        <span class="metric-val">${((mkt.liquidity || 0) * 100).toFixed(0)}%</span>
+                    </div>
+                    <div class="metric">
+                        <span>Sell Rate:</span>
+                        <span class="metric-val">${((mkt.sellRate || 0) * 100).toFixed(0)}%</span>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        function renderPullFeed() {
+            const container = document.getElementById('pullFeed');
+            const sales = deepSalesData.slice(0, 20);
+
+            if (!sales.length) {
+                container.innerHTML = '<div class="pull-feed-empty">No recent pulls</div>';
+                return;
+            }
+
+            const html = sales.map(s => {
+                const rarity = (s.nft?.rarity || 'common').toLowerCase();
+                const rarityClass = 'rarity-' + rarity;
+                const amount = s.amount ? (s.amount / 1e6) : 0;
+                const ago = timeAgo(s.time || s.createdAt);
+
+                return `
+                    <div class="pull-item">
+                        <div class="pull-rarity ${rarityClass}"></div>
+                        <div class="pull-info">
+                            <div class="pull-title">${s.nft?.name || s.ebayListing?.data?.title || 'Unknown'}</div>
+                            <div class="pull-detail">${s.nft?.pack_name || 'Unknown'}</div>
+                        </div>
+                        <div class="pull-value">${fmt$(amount)}</div>
+                        <div class="pull-time">${ago}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `<div class="pull-feed-scroll">${html}</div>`;
+        }
+
+        function renderLeaderboard() {
+            const container = document.getElementById('leaderboardSection');
+            const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
+            const data = weeklyLB;
+
+            const rows = data.slice(0, 15).map((lb, idx) => {
+                const isMe = lb.address === MY_WALLET;
+                const rowClass = isMe ? 'me-row' : '';
+                let rankBadgeHtml = '';
+                if (idx < 3) {
+                    const rankClasses = ['rank-1', 'rank-2', 'rank-3'];
+                    rankBadgeHtml = `<span class="rank-badge ${rankClasses[idx]}">${idx + 1}</span>`;
+                }
+
+                return `
+                    <tr class="${rowClass}">
+                        <td>${rankBadgeHtml || (idx + 1)}</td>
+                        <td>${shortAddr(lb.address)}</td>
+                        <td class="points-col">${fmt$(lb.volume / 1e6)}</td>
+                        <td>${(lb.points || 0).toLocaleString()}</td>
+                        <td>${(lb.num_packs || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="tab-row">
+                    <button class="tab-btn active">Weekly Top 15</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Address</th>
+                            <th>Volume</th>
+                            <th>Points</th>
+                            <th>Packs</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        function renderPrizes() {
+            const container = document.getElementById('prizeSection');
+            const prizeNames = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+
+            const html = prizeNames.map((name, i) => {
+                const prize = prizes[i] || { amount: '?', description: 'TBD' };
+                return `
+                    <div class="prize-card">
+                        <div class="rank-title p${i + 1}">${name}</div>
+                        <div class="prize-desc">${prize.description || prize.amount || 'Prize'}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="tab-row">
+                    <button class="tab-btn active">Week ${getISOWeek()}</button>
+                </div>
+                <div class="prize-grid">${html}</div>
+            `;
+        }
+
+        function renderPacks() {
+            const container = document.getElementById('packTableBody');
+            if (!allPacks.length) {
+                container.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No packs loaded</td></tr>';
+                return;
+            }
+
+            const rows = allPacks.slice(0, 30).map(p => {
+                const price = Number(p.mint_price) || 1;
+                const ratio = (p.ev / price).toFixed(2);
+                const cat = (p.category || '').toLowerCase();
+                const catBadge = p.category ? `<span class="cat-badge cat-${cat}">${p.category}</span>` : '';
+                const status = p.in_stock ? 'â' : 'Sold';
+                const statusColor = p.in_stock ? 'var(--accent-green)' : 'var(--text-secondary)';
+
+                return `
+                    <tr>
+                        <td><strong>${p.name}</strong></td>
+                        <td>${catBadge}</td>
+                        <td>${fmt$(price)}</td>
+                        <td>${fmt$(p.ev || 0)}</td>
+                        <td>${ratio}x</td>
+                        <td>${(p.num_pulls_7d || 0).toLocaleString()}</td>
+                        <td style="color: ${statusColor}"><strong>${status}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+
+            container.innerHTML = rows;
+        }
+
+        // ===== INITIALIZATION & AUTO-REFRESH =====
+        async function initialize() {
+            await loadData();
+            setInterval(updateStatus, 5000);
+            setInterval(() => {
+                loadData().catch(e => console.error('Refresh failed:', e));
+            }, 120000);
+        }
+
+        initialize().catch(console.error);
+    </script>
 </body>
 </html>
