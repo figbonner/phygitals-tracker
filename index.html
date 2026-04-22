@@ -1303,7 +1303,6 @@
         }
 
         function renderPacks() {
-            renderPackFilters();
             let packs = [...allPacks];
             if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
             else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
