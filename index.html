@@ -841,104 +841,60 @@
         // ===== PACK SCORING ALGORITHM (ALL 10 WEIGHTED FACTORS) =====
         function calcBestRips() {
             if (!allPacks.length) return [];
-
             const myIdx = weeklyLB.findIndex(e => e.address === MY_WALLET);
-            if (myIdx === -1) return [];
-
-            const me = weeklyLB[myIdx];
-            const above = myIdx > 0 ? weeklyLB[myIdx - 1] : null;
-            const gapToNext = above ? (above.volume - me.volume) / 1e6 : 0;
-
-            calcMarketTrends();
+            const above = myIdx > 0 ? weeklyLB[myIdx-1] : null;
+            const gapToNext = above ? (above.volume - weeklyLB[myIdx].volume) / 1e6 : 0;
 
             return allPacks
-                .filter(p => p.in_stock && p.ev > 0)
-                .map(p => {
-                    const price = Number(p.mint_price) || 1;
-                    const evRatio = p.ev / price;
-                    const variance = calcVariance(p);
-                    const activity = Math.min((p.num_pulls_7d || 0) / 100, 1);
-                    const buyback = p.buyback_percent || 0;
+              .filter(p => p.in_stock && p.ev > 0)
+              .map(p => {
+                const price = Number(p.mint_price) || 1;
+                const evRatio = p.ev / price;
+                const variance = calcVariance(p);
+                const buyback = p.buyback_percent || 0;
 
-                    // Base scores
-                    const evScore = Math.min(evRatio, 1.3) / 1.3;
-                    const steadyScore= 1 - Math.min(variance.score / 6, 1);
-                    const activityScore = activity;
-                    const buybackScore = buyback;
-                    const lbScore = (gapToNext > 0 && price <= gapToNext * 0.1) ? 1 : 0.5;
+                const pullsPerDay = (p.num_pulls_7d || 0) / 7;
+                const activityNorm = Math.min(pullsPerDay / 200, 1);
 
-                    // Market intelligence scores
-                    const cat = (p.category || '').toLowerCase();
-                    const mkt = marketTrends[cat] || {};
+                const rarities = p.rarity_distribution || [];
+                const mythicTier = rarities.find(r => ['mythic','legendary'].includes(r.name?.toLowerCase()) && r.weight > 0);
+                const mythicWeight = mythicTier ? mythicTier.weight : 0;
+                const mythicCost = mythicWeight > 0 ? price / (mythicWeight / 100) : Infinity;
+                const mythicValue = mythicTier ? (mythicTier.upper || mythicTier.lower || 0) : 0;
+                const mythicROI = mythicValue > 0 && mythicCost < Infinity ? mythicValue / mythicCost : 0;
 
-                    // 1. Real EV adjustment
-                    const realFmvRatio = mkt.realFmvRatio || 0.85;
-                    const adjustedEv = p.ev * realFmvRatio;
-                    const adjustedEvRatio = adjustedEv / price;
-                    const adjEvScore = Math.min(adjustedEvRatio, 1.3) / 1.3;
+                const minEv = p.min_ev || p.ev * 0.95;
+                const maxEv = p.max_ev || p.ev * 1.05;
+                const evStability = 1 - Math.min((maxEv - minEv) / price, 0.5) / 0.5;
 
-                    // 2. EV spread tightness
-                    const evSpread = (p.max_ev && p.min_ev && p.ev > 0) ? (p.max_ev - p.min_ev) / p.ev : 1;
-                    const spreadScore = 1 - Math.min(evSpread, 1);
+                const buybackFloor = minEv * buyback;
+                const floorRatio = buybackFloor / price;
 
-                    // 3. Pull recency
-                    let pullRecencyScore = 0.5;
-                    if (p.last_pull) {
-                        const minsSincePull = (Date.now() - new Date(p.last_pull).getTime()) / 60000;
-                        if (minsSincePull < 5) pullRecencyScore = 1.0;
-                        else if (minsSincePull < 30) pullRecencyScore = 0.9;
-                        else if (minsSincePull < 120) pullRecencyScore = 0.7;
-                        else if (minsSincePull < 720) pullRecencyScore = 0.4;
-                    }
+                const evScore = Math.min(evRatio, 1.3) / 1.3;
+                const stabilityScore = evStability;
+                const velocityScore = activityNorm;
+                const floorScore = Math.min(floorRatio, 1);
+                const mythicScore = Math.min(mythicROI, 3) / 3;
+                const lbScore = (gapToNext > 0 && price <= gapToNext * 0.3) ? 1 : 0.5;
 
-                    // 4. Market liquidity (FIXED: use real marketplace data, not Math.random())
-                    const liquidityScore = mkt.liquidity || 0.3;
+                const composite = (evScore * 0.30) + (stabilityScore * 0.15) + (velocityScore * 0.15) + (floorScore * 0.15) + (mythicScore * 0.10) + (lbScore * 0.15);
 
-                    // 5. EV freshness
-                    let freshnessScore = 0.2;
-                    if (p.ev_updated_at) {
-                        const hrs = hoursAgo(p.ev_updated_at);
-                        if (hrs < 1) freshnessScore = 1.0;
-                        else if (hrs < 6) freshnessScore = 0.8;
-                        else if (hrs < 24) freshnessScore = 0.5;
-                    }
+                let reasons = [];
+                if (evRatio >= 1.04) reasons.push('Strong EV (' + (evRatio*100).toFixed(1) + '%)');
+                if (variance.label === 'Steady') reasons.push('Low risk');
+                if (pullsPerDay > 50) reasons.push(Math.round(pullsPerDay) + ' pulls/day');
+                if (buyback >= 0.9) reasons.push(Math.round(buyback*100) + '% buyback');
+                if (floorRatio >= 0.85) reasons.push('Strong floor (' + (floorRatio*100).toFixed(0) + '%)');
+                if (mythicCost < Infinity && mythicCost <= price * 200) reasons.push('Mythic ~' + fmt$(mythicCost));
 
-                    // Composite with all 10 weighted factors
-                    const composite =
-                        (adjEvScore * 0.30) +
-                        (evScore * 0.10) +
-                        (steadyScore * 0.12) +
-                        (activityScore * 0.10) +
-                        (buybackScore * 0.10) +
-                        (spreadScore * 0.06) +
-                        (pullRecencyScore * 0.06) +
-                        (liquidityScore * 0.06) +
-                        (freshnessScore * 0.05) +
-                        (lbScore * 0.05);
-
-                    // Reasons
-                    let reasons = [];
-                    if (adjustedEvRatio >= 1.0) reasons.push('Adj. EV ' + (adjustedEvRatio * 100).toFixed(0) + '%');
-                    else if (evRatio >= 1.04) reasons.push('EV ' + (evRatio * 100).toFixed(0) + '%');
-                    if (realFmvRatio >= 0.92) reasons.push('Cards sell near FMV');
-                    else if (realFmvRatio < 0.80) reasons.push('Cards sell ' + Math.round((1 - realFmvRatio) * 100) + '% below FMV');
-                    if (variance.label === 'Steady') reasons.push('Low risk');
-                    if (pullRecencyScore >= 0.9) reasons.push('Just pulled');
-                    if (activity > 0.5) reasons.push('High activity');
-                    if (buyback >= 0.9) reasons.push(Math.round(buyback * 100) + '% buyback');
-                    if (freshnessScore >= 0.8) reasons.push('Fresh EV');
-                    if (spreadScore >= 0.7) reasons.push('Tight EV range');
-                    if (liquidityScore >= 0.6) reasons.push('Liquid market');
-
-                    return {
-                        pack: p, composite, evRatio, adjustedEvRatio, variance,
-                        realFmvRatio, spreadScore, pullRecencyScore, liquidityScore, freshnessScore,
-                        reasons: reasons.length ? reasons.join('Â· ') : 'Balanced pick'
-                    };
-                })
-                .sort((a, b) => b.composite - a.composite)
-                .slice(0, 3);
-        }
+                return {
+                  pack: p, composite, evRatio, variance, pullsPerDay, mythicCost, mythicValue, floorRatio, evStability,
+                  reasons: reasons.length ? reasons.join(' \u00B7 ') : 'Balanced pick'
+                };
+              })
+              .sort((a, b) => b.composite - a.composite)
+              .slice(0, 3);
+          }
 
         // ===== DEEP SALES SCAN =====
         async function scanDeepSales(maxPages = 20) {
@@ -1021,6 +977,34 @@
             }
         }
 
+        // ===== SSR SCRAPING: ENRICH PACK DATA =====
+        async function scrapeSSRData() {
+          try {
+            const r = await fetch(PROXY + encodeURIComponent('https://www.phygitals.com/claw/elite-pack'));
+            if (!r.ok) return;
+            const html = await r.text();
+            const m = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
+            if (!m) return;
+            const data = JSON.parse(m[1]);
+            const allClaws = data.props?.pageProps?.allClaws || [];
+            if (allClaws.length && allPacks.length) {
+              allClaws.forEach(sc => {
+                const match = allPacks.find(p => String(p.id) === String(sc.id) || p.slug === sc.slug);
+                if (match) {
+                  if (sc.min_ev && !match.min_ev) match.min_ev = sc.min_ev;
+                  if (sc.max_ev && !match.max_ev) match.max_ev = sc.max_ev;
+                  if (sc.categories && !match.categories) match.categories = sc.categories;
+                }
+              });
+              allClaws.forEach(sc => {
+                if (!allPacks.find(p => String(p.id) === String(sc.id) || p.slug === sc.slug)) {
+                  allPacks.push(sc);
+                }
+              });
+            }
+          } catch(e) { console.log('SSR scrape error:', e); }
+        }
+
         // ===== DATA LOADING =====
         async function loadData() {
             try {
@@ -1063,6 +1047,7 @@
 
                 setProgress(90);
 
+                await scrapeSSRData().catch(() => {});
                 renderAll();
 
                 lastRefresh = new Date();
@@ -1152,44 +1137,39 @@
         }
 
         function renderBestRips() {
-            const rips = calcBestRips();
-            if (!rips.length) {
-                document.getElementById('bestRipSection').innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No packs available</p>';
-                return;
+            const best = calcBestRips();
+            if (!best.length) {
+              document.getElementById('bestRipCards').innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">No packs in stock</div>';
+              return;
             }
-
-            const cardsHtml = rips.map((r, i) => {
-                const p = r.pack;
-                return `
-                    <div class="rip-card">
-                        <div class="rip-rank">#${i + 1}</div>
-                        <div class="rip-name">${p.name}</div>
-                        <div class="rip-cat">${p.category || 'Unknown'}</div>
-                        <div class="rip-stats">
-                            <div><span class="rip-label">EV Ratio</span></div>
-                            <div><span class="rip-val">${(r.adjustedEvRatio * 100).toFixed(0)}%</span></div>
-                            <div><span class="rip-label">Liquidity</span></div>
-                            <div><span class="rip-val">${(r.liquidityScore * 100).toFixed(0)}%</span></div>
-                            <div><span class="rip-label">Recency</span></div>
-                            <div><span class="rip-val">${(r.pullRecencyScore * 100).toFixed(0)}%</span></div>
-                            <div><span class="rip-label">Composite</span></div>
-                            <div><span class="rip-val">${(r.composite * 100).toFixed(0)}%</span></div>
-                        </div>
-                        <div class="rip-reason">${r.reasons}</div>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('bestRipSection').innerHTML = `
-                <div class="best-rip-header">
-                    <div>
-                        <div class="best-rip-title">Best Rip Now</div>
-                        <div class="best-rip-subtitle">Top 3 by composite score: Adjusted EV, risk, liquidity, recency, freshness</div>
-                    </div>
-                </div>
-                <div class="best-rip-cards">${cardsHtml}</div>
-            `;
-        }
+            const medals = ['\u{1F947} #1 Pick', '\u{1F948} #2 Pick', '\u{1F949} #3 Pick'];
+            let html = '';
+            best.forEach((b, i) => {
+              const p = b.pack;
+              const price = Number(p.mint_price);
+              const catLabel = p.repack ? 'Creator' : (p.category || 'Other');
+              const mythicStr = b.mythicCost < Infinity ? fmt$(b.mythicCost) : '\u2014';
+              const floorStr = (b.floorRatio * 100).toFixed(0) + '%';
+              const velStr = Math.round(b.pullsPerDay) + '/day';
+              html += '<div class="rip-card">' +
+                '<div class="rip-rank">' + medals[i] + '</div>' +
+                '<div class="rip-name">' + p.name + '</div>' +
+                '<div class="rip-cat">' + catLabel + ' \u00B7 $' + price + '</div>' +
+                '<div class="rip-stats">' +
+                '<div class="rip-label">EV/Price</div><div class="rip-val">' + (b.evRatio*100).toFixed(1) + '%</div>' +
+                '<div class="rip-label">EV</div><div class="rip-val">' + fmt$(p.ev) + '</div>' +
+                '<div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ' + b.variance.class + '">' + b.variance.icon + ' ' + b.variance.label + '</span></div>' +
+                '<div class="rip-label">Pull Velocity</div><div class="rip-val">' + velStr + '</div>' +
+                '<div class="rip-label">Mythic Cost</div><div class="rip-val" style="color:#a855f7">' + mythicStr + '</div>' +
+                '<div class="rip-label">Floor Safety</div><div class="rip-val" style="color:' + (b.floorRatio >= 0.85 ? '#22c55e' : b.floorRatio >= 0.7 ? '#f59e0b' : '#ef4444') + '">' + floorStr + '</div>' +
+                '<div class="rip-label">Buyback</div><div class="rip-val">' + (p.buyback_percent ? Math.round(p.buyback_percent*100)+'%' : '\u2014') + '</div>' +
+                '<div class="rip-label">Score</div><div class="rip-val" style="color:#f59e0b">' + (b.composite*100).toFixed(0) + '/100</div>' +
+                '</div>' +
+                '<div class="rip-reason">' + b.reasons + '</div>' +
+                '</div>';
+            });
+            document.getElementById('bestRipCards').innerHTML = html;
+          }
 
         function renderMarketTrends() {
             const container = document.getElementById('marketTrends');
@@ -1321,35 +1301,53 @@
         }
 
         function renderPacks() {
-            const container = document.getElementById('packTableBody');
-            if (!allPacks.length) {
-                container.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-secondary);">No packs loaded</td></tr>';
-                return;
-            }
+            renderPackFilters();
+            let packs = [...allPacks];
+            if (currentFilter === 'creator') packs = packs.filter(p => p.repack);
+            else if (currentFilter !== 'all') packs = packs.filter(p => !p.repack && (p.category || 'other') === currentFilter);
+            packs.sort((a, b) => (b.ev / Number(b.mint_price)) - (a.ev / Number(a.mint_price)));
+            let html = '';
+            packs.forEach(p => {
+              const price = Number(p.mint_price);
+              const ratio = price > 0 ? (p.ev / price * 100).toFixed(1) : 0;
+              const evClass = ratio >= 105 ? 'ev-good' : ratio >= 98 ? 'ev-ok' : 'ev-bad';
+              const catClass = p.repack ? 'cat-creator' : 'cat-' + (p.category || 'other').replace(/\s+/g, '-').toLowerCase();
+              const catLabel = p.repack ? (p.creator_profile?.username || 'Creator') : (p.category || 'Other');
+              const packLabel = p.repack ? p.name + ' <span style="color:#94a3b8;font-size:.7rem">by ' + (p.creator_profile?.username || '?') + '</span>' : p.name;
+              const buyback = p.buyback_percent ? (p.buyback_percent * 100).toFixed(0) + '%' : '\u2014';
+              const lastPull = p.last_pull ? timeAgo(p.last_pull) : '\u2014';
+              const risk = calcVariance(p);
 
-            const rows = allPacks.slice(0, 30).map(p => {
-                const price = Number(p.mint_price) || 1;
-                const ratio = (p.ev / price).toFixed(2);
-                const cat = (p.category || '').toLowerCase();
-                const catBadge = p.category ? `<span class="cat-badge cat-${cat}">${p.category}</span>` : '';
-                const status = p.in_stock ? 'â' : 'Sold';
-                const statusColor = p.in_stock ? 'var(--accent-green)' : 'var(--text-secondary)';
+              const pullsPerDay = Math.round((p.num_pulls_7d || 0) / 7);
+              const minEv = p.min_ev || p.ev * 0.95;
+              const bb = p.buyback_percent || 0.85;
+              const floor = minEv * bb;
+              const floorPct = price > 0 ? (floor / price * 100).toFixed(0) : '\u2014';
+              const floorColor = floorPct >= 85 ? '#22c55e' : floorPct >= 70 ? '#f59e0b' : '#ef4444';
 
-                return `
-                    <tr>
-                        <td><strong>${p.name}</strong></td>
-                        <td>${catBadge}</td>
-                        <td>${fmt$(price)}</td>
-                        <td>${fmt$(p.ev || 0)}</td>
-                        <td>${ratio}x</td>
-                        <td>${(p.num_pulls_7d || 0).toLocaleString()}</td>
-                        <td style="color: ${statusColor}"><strong>${status}</strong></td>
-                    </tr>
-                `;
-            }).join('');
+              const rarities = p.rarity_distribution || [];
+              const mythicTier = rarities.find(r => ['mythic','legendary'].includes(r.name?.toLowerCase()) && r.weight > 0);
+              const mCost = mythicTier && mythicTier.weight > 0 ? price / (mythicTier.weight / 100) : null;
+              const mCostStr = mCost ? fmt$(mCost) : '\u2014';
 
-            container.innerHTML = rows;
-        }
+              html += '<tr>' +
+                '<td><span class="stock-dot ' + (p.in_stock ? 'stock-in' : 'stock-out') + '"></span></td>' +
+                '<td>' + packLabel + '</td>' +
+                '<td><span class="cat-badge ' + catClass + '">' + catLabel + '</span></td>' +
+                '<td>$' + price + '</td>' +
+                '<td><strong>$' + (p.ev?.toFixed(2) || '\u2014') + '</strong></td>' +
+                '<td>$' + (p.min_ev?.toFixed(1) || '?') + '\u2013$' + (p.max_ev?.toFixed(0) || '?') + '</td>' +
+                '<td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ' + evClass + '" style="width:' + Math.min(ratio, 120)*0.6 + 'px"></div><strong>' + ratio + '%</strong></div></td>' +
+                '<td><span class="risk-badge ' + risk.class + '">' + risk.icon + ' ' + risk.label + '</span></td>' +
+                '<td>' + buyback + '</td>' +
+                '<td style="color:' + floorColor + '">' + floorPct + '%</td>' +
+                '<td>' + pullsPerDay + '/d</td>' +
+                '<td style="color:#a855f7">' + mCostStr + '</td>' +
+                '<td>' + lastPull + '</td>' +
+                '</tr>';
+            });
+            document.getElementById('packBody').innerHTML = html;
+          }
 
         // ===== INITIALIZATION & AUTO-REFRESH =====
         async function initialize() {
