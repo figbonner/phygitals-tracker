@@ -680,7 +680,9 @@
                         <th>Price</th>
                         <th>EV</th>
                         <th>Ratio</th>
-                        <th>7d Pulls</th>
+                        <th>Floor</th>
+                        <th>Pulls/Day</th>
+                        <th>Mythic Cost</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -1158,7 +1160,7 @@
                 '<div class="rip-stats">' +
                 '<div class="rip-label">EV/Price</div><div class="rip-val">' + (b.evRatio*100).toFixed(1) + '%</div>' +
                 '<div class="rip-label">EV</div><div class="rip-val">' + fmt$(p.ev) + '</div>' +
-                '<div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ' + b.variance.class + '">' + b.variance.icon + ' ' + b.variance.label + '</span></div>' +
+                '<div class="rip-label">Risk</div><div class="rip-val"><span class="risk-badge ' + (b.variance.label === 'Steady' ? 'risk-steady' : b.variance.label === 'Moderate' ? 'risk-moderate' : 'risk-volatile') + '">' + (b.variance.label === 'Steady' ? '\u{1F4CA}' : b.variance.label === 'Moderate' ? '\u2696' : '\u{1F3B2}') + ' ' + b.variance.label + '</span></div>' +
                 '<div class="rip-label">Pull Velocity</div><div class="rip-val">' + velStr + '</div>' +
                 '<div class="rip-label">Mythic Cost</div><div class="rip-val" style="color:#a855f7">' + mythicStr + '</div>' +
                 '<div class="rip-label">Floor Safety</div><div class="rip-val" style="color:' + (b.floorRatio >= 0.85 ? '#22c55e' : b.floorRatio >= 0.7 ? '#f59e0b' : '#ef4444') + '">' + floorStr + '</div>' +
@@ -1338,7 +1340,7 @@
                 '<td><strong>$' + (p.ev?.toFixed(2) || '\u2014') + '</strong></td>' +
                 '<td>$' + (p.min_ev?.toFixed(1) || '?') + '\u2013$' + (p.max_ev?.toFixed(0) || '?') + '</td>' +
                 '<td><div style="display:flex;align-items:center;gap:6px"><div class="ev-bar ' + evClass + '" style="width:' + Math.min(ratio, 120)*0.6 + 'px"></div><strong>' + ratio + '%</strong></div></td>' +
-                '<td><span class="risk-badge ' + risk.class + '">' + risk.icon + ' ' + risk.label + '</span></td>' +
+                '<td><span class="risk-badge ' + (risk.label === 'Steady' ? 'risk-steady' : risk.label === 'Moderate' ? 'risk-moderate' : 'risk-volatile') + '">' + (risk.label === 'Steady' ? '\u{1F4CA}' : risk.label === 'Moderate' ? '\u2696' : '\u{1F3B2}') + ' ' + risk.label + '</span></td>' +
                 '<td>' + buyback + '</td>' +
                 '<td style="color:' + floorColor + '">' + floorPct + '%</td>' +
                 '<td>' + pullsPerDay + '/d</td>' +
@@ -1346,7 +1348,7 @@
                 '<td>' + lastPull + '</td>' +
                 '</tr>';
             });
-            document.getElementById('packBody').innerHTML = html;
+            document.getElementById('packTableBody').innerHTML = html;
           }
 
         // ===== INITIALIZATION & AUTO-REFRESH =====
