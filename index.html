@@ -1109,7 +1109,7 @@
               <div class="chest-info">
                 <div class="chest-stat">
                   <div class="label">Chest</div>
-                  <div class="value">${fmt(activeChest)}</div>
+                  <div class="value">${fmt$(activeChest)}</div>
                 </div>
                 <div class="chest-stat">
                   <div class="label">Total Packs</div>
@@ -1125,7 +1125,7 @@
                 </div>
                 <div class="chest-stat">
                   <div class="label">EV/Key</div>
-                  <div class="value">${fmt(evPerKey)}</div>
+                  <div class="value">${fmt$(evPerKey)}</div>
                 </div>
               </div>
             </div>
@@ -1143,17 +1143,17 @@
               <tr>
                 <td>30th Edition</td><td>$50</td><td>1</td>
                 <td>$50.00</td><td>$7.50</td>
-                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey - 7.5)}</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt$(evPerKey - 7.5)}</td>
               </tr>
               <tr>
                 <td>Legend Pack</td><td>$250</td><td>5</td>
                 <td class="best">$50.00</td><td>$37.50</td>
-                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey * 5 - 37.5)}</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt$(evPerKey * 5 - 37.5)}</td>
               </tr>
               <tr>
                 <td>Mythic Pack</td><td>$1,000</td><td>20</td>
                 <td class="best">$50.00</td><td>$150.00</td>
-                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey * 20 - 150)}</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt$(evPerKey * 20 - 150)}</td>
               </tr>
             </table>
             
