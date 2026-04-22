@@ -1083,7 +1083,7 @@
           
           // Estimate total keys from total packs (avg ~1 key per pack at $50 base)
           // If totalPacks is 0 from SSR, use a reasonable estimate
-          const estimatedTotalKeys = totalPacks > 0 ? totalPacks : 13500;
+          const estimatedTotalKeys = Math.max(totalPacks * 3, teamKeys * 5, 40000);
           const teamKeyShare = (teamKeys / estimatedTotalKeys * 100);
           
           // Draw probability: 5 teams drawn, probability of being one of them
