@@ -627,6 +627,28 @@
         .cat-onepiece { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
         .cat-yugioh { background: rgba(236, 72, 153, 0.2); color: #ec4899; }
         .cat-creator { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+    
+      /* 30th Edition Section */
+      .edition-30th { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #e6c84c; border-radius: 12px; padding: 16px; margin: 10px 0; }
+      .edition-30th .section-title { color: #e6c84c; }
+      .edition-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+      .chest-info { display: flex; gap: 20px; flex-wrap: wrap; }
+      .chest-stat { background: rgba(230,200,76,0.1); border: 1px solid rgba(230,200,76,0.3); border-radius: 8px; padding: 10px 16px; text-align: center; }
+      .chest-stat .label { font-size: 11px; color: #999; text-transform: uppercase; }
+      .chest-stat .value { font-size: 20px; font-weight: bold; color: #e6c84c; }
+      .chest-stat .value.green { color: #4ade80; }
+      .pokedex-bar { width: 100%; background: #333; border-radius: 6px; height: 18px; margin: 8px 0; overflow: hidden; position: relative; }
+      .pokedex-fill { height: 100%; background: linear-gradient(90deg, #e6c84c, #f0a030); border-radius: 6px; transition: width 0.5s; }
+      .pokedex-text { position: absolute; top: 0; left: 50%; transform: translateX(-50%); font-size: 11px; line-height: 18px; color: #fff; font-weight: bold; }
+      .tier-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+      .tier-table th { background: rgba(230,200,76,0.15); color: #e6c84c; padding: 6px 10px; font-size: 11px; text-align: left; }
+      .tier-table td { padding: 6px 10px; border-bottom: 1px solid #333; font-size: 13px; }
+      .tier-table .best { color: #4ade80; font-weight: bold; }
+      .team-members { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+      .team-member { background: rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 12px; font-size: 12px; }
+      .team-member .name { color: #e6c84c; font-weight: bold; }
+      .team-member .catches { color: #999; }
+
     </style>
 </head>
 <body>
@@ -653,6 +675,13 @@
 
         <!-- Best Rip Now -->
         <div class="best-rip-section" id="bestRipSection"></div>
+
+
+        <!-- 30th Edition -->
+        <div class="edition-30th">
+          <div class="section-title">🎮 30th Edition — Pokemon Hunt</div>
+          <div id="edition30Content"><div style="color:#999;padding:20px;text-align:center;">Loading 30th Edition data...</div></div>
+        </div>
 
         <!-- Market Trends -->
         <div class="section-title">Market Trends</div>
@@ -1009,7 +1038,134 @@
         }
 
         // ===== DATA LOADING =====
-        async function loadData() {
+  
+      async function load30thEdition() {
+        const el = document.getElementById('edition30Content');
+        if (!el) return;
+        try {
+          // Scrape the 30th prizes page for chest and total stats
+          const prizesHtml = await fetch(CORS_PROXY + encodeURIComponent('https://www.phygitals.com/30th/prizes')).then(r => r.text()).catch(() => '');
+          
+          // Scrape the 30th home page for activity and pokedex
+          const homeHtml = await fetch(CORS_PROXY + encodeURIComponent('https://www.phygitals.com/30th')).then(r => r.text()).catch(() => '');
+          
+          // Parse total packs opened
+          let totalPacks = 0;
+          const packsMatch = prizesHtml.match(/([d,]+)s*packs?s*opened/i);
+          if (packsMatch) totalPacks = parseInt(packsMatch[1].replace(/,/g, ''));
+          
+          // Parse chest milestones
+          let activeChest = 25000;
+          const chestMatches = prizesHtml.match(/\$([d,]+)K?.*?ACTIVE/i);
+          if (chestMatches) activeChest = parseInt(chestMatches[1].replace(/,/g, '')) * (chestMatches[0].includes('K') ? 1000 : 1);
+          
+          // Parse pokedex from home page  
+          let pokedexCaught = 0, pokedexTotal = 151;
+          const pdxMatch = homeHtml.match(/(\d+)\/(\d+)/);
+          if (pdxMatch) { pokedexCaught = parseInt(pdxMatch[1]); pokedexTotal = parseInt(pdxMatch[2]); }
+          
+          // Parse team keys
+          let teamKeys = 0;
+          const keysMatch = homeHtml.match(/Key[^<]*?<[^>]*>([d,]+)/i) || homeHtml.match(/([d,]+)\s*<[^>]*>\s*Team Keys/i);
+          if (keysMatch) teamKeys = parseInt(keysMatch[1].replace(/,/g, ''));
+          // Fallback: look for larger number near "Key"
+          if (!teamKeys) {
+            const keyNums = homeHtml.match(/(\d{3,})/g) || [];
+            // The team keys number is typically large (thousands)
+          }
+          
+          // Parse team members from home page
+          const members = [];
+          const memberPattern = /class="[^"]*"[^>]*>[^<]*<[^>]*>([\w]+)<\/[^>]*>[^<]*<[^>]*>(\d+)\s*catches/gi;
+          let mm;
+          while ((mm = memberPattern.exec(homeHtml)) !== null) {
+            members.push({name: mm[1], catches: parseInt(mm[2])});
+          }
+          
+          // Parse recent activity
+          const activity = [];
+          const actPattern = /caught[^<]*<[^>]*>([^<]+)<\/[^>]*>[^<]*<[^>]*>([^<]*ago)/gi;
+          let am;
+          while ((am = actPattern.exec(homeHtml)) !== null && activity.length < 5) {
+            activity.push({pokemon: am[1], time: am[2]});
+          }
+          
+          // Calculate key economics
+          const estimatedTotalKeys = totalPacks; // ~1 key per $50 pack on average
+          const teamKeyShare = teamKeys && estimatedTotalKeys ? (teamKeys / estimatedTotalKeys * 100) : 0;
+          const drawProb = teamKeys && estimatedTotalKeys ? Math.min(1, 1 - Math.pow(1 - teamKeys/estimatedTotalKeys, 5)) * 100 : 0;
+          const evPerKey = estimatedTotalKeys ? (activeChest / estimatedTotalKeys) : 0;
+          const costPerKey = 50 * 0.15; // $7.50 lost per key (15% sellback cost on $50)
+          const keyROI = evPerKey > 0 ? (evPerKey / costPerKey * 100) : 0;
+          
+          // Next milestone
+          const milestones = [25000, 50000, 75000, 125000, 175000, 250000];
+          const nextMilestone = milestones.find(m => m > activeChest) || 250000;
+          
+          const pdxPct = Math.round(pokedexCaught / pokedexTotal * 100);
+          
+          el.innerHTML = `
+            <div class="edition-header">
+              <div class="chest-info">
+                <div class="chest-stat">
+                  <div class="label">Chest</div>
+                  <div class="value">${fmt(activeChest)}</div>
+                </div>
+                <div class="chest-stat">
+                  <div class="label">Total Packs</div>
+                  <div class="value">${totalPacks.toLocaleString()}</div>
+                </div>
+                <div class="chest-stat">
+                  <div class="label">Your Keys</div>
+                  <div class="value green">${teamKeys.toLocaleString()}</div>
+                </div>
+                <div class="chest-stat">
+                  <div class="label">Draw Chance</div>
+                  <div class="value green">${drawProb.toFixed(1)}%</div>
+                </div>
+                <div class="chest-stat">
+                  <div class="label">EV/Key</div>
+                  <div class="value">${fmt(evPerKey)}</div>
+                </div>
+              </div>
+            </div>
+            
+            <div style="margin-bottom:12px;">
+              <div style="font-size:12px;color:#999;margin-bottom:4px;">Pokedex: ${pokedexCaught}/${pokedexTotal}</div>
+              <div class="pokedex-bar">
+                <div class="pokedex-fill" style="width:${pdxPct}%"></div>
+                <div class="pokedex-text">${pdxPct}%</div>
+              </div>
+            </div>
+            
+            <table class="tier-table">
+              <tr><th>Pack Tier</th><th>Price</th><th>Keys</th><th>Cost/Key</th><th>Sellback Loss</th><th>Net EV/Key</th></tr>
+              <tr>
+                <td>30th Edition</td><td>$50</td><td>1</td>
+                <td>$50.00</td><td>$7.50</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey - 7.5)}</td>
+              </tr>
+              <tr>
+                <td>Legend Pack</td><td>$250</td><td>5</td>
+                <td class="best">$50.00</td><td>$37.50</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey * 5 - 37.5)}</td>
+              </tr>
+              <tr>
+                <td>Mythic Pack</td><td>$1,000</td><td>20</td>
+                <td class="best">$50.00</td><td>$150.00</td>
+                <td style="color:${evPerKey > 7.5 ? '#4ade80' : '#f87171'}">${fmt(evPerKey * 20 - 150)}</td>
+              </tr>
+            </table>
+            
+            ${members.length ? '<div style="margin-top:12px;font-size:12px;color:#999;">Team Members</div><div class="team-members">' + members.map(m => '<div class="team-member"><span class="name">' + m.name + '</span> <span class="catches">' + m.catches + ' catches</span></div>').join('') + '</div>' : ''}
+          `;
+        } catch(e) {
+          console.log('30th Edition error:', e);
+          el.innerHTML = '<div style="color:#999;padding:10px;">Could not load 30th Edition data</div>';
+        }
+      }
+
+      async function loadData() {
             try {
                 setProgress(10);
 
@@ -1052,6 +1208,7 @@
 
                 await scrapeSSRData().catch(() => {});
                 renderAll();
+          load30thEdition().catch(() => {});
 
                 lastRefresh = new Date();
                 updateStatus();
