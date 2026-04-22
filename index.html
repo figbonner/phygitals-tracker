@@ -980,7 +980,7 @@
         // ===== SSR SCRAPING: ENRICH PACK DATA =====
         async function scrapeSSRData() {
           try {
-            const r = await fetch(PROXY + encodeURIComponent('https://www.phygitals.com/claw/elite-pack'));
+            const r = await fetch(CORS_PROXY + encodeURIComponent('https://www.phygitals.com/claw/elite-pack'));
             if (!r.ok) return;
             const html = await r.text();
             const m = html.match(/<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s);
@@ -1139,7 +1139,7 @@
         function renderBestRips() {
             const best = calcBestRips();
             if (!best.length) {
-              document.getElementById('bestRipCards').innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">No packs in stock</div>';
+              document.getElementById('bestRipSection').innerHTML = '<div style="color:#64748b;text-align:center;padding:20px">No packs in stock</div>';
               return;
             }
             const medals = ['\u{1F947} #1 Pick', '\u{1F948} #2 Pick', '\u{1F949} #3 Pick'];
@@ -1168,7 +1168,7 @@
                 '<div class="rip-reason">' + b.reasons + '</div>' +
                 '</div>';
             });
-            document.getElementById('bestRipCards').innerHTML = html;
+            document.getElementById('bestRipSection').innerHTML = html;
           }
 
         function renderMarketTrends() {
